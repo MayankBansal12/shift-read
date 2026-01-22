@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import ThemeToggle from '@/components/ThemeToggle'
 import ArticleHeader from '@/components/ArticleHeader'
+import ArticleRenderer from '@/components/ArticleRenderer'
 import { fetchContent, type ArticleData } from '@/app/actions/fetchContent'
 
 export default function ReadPage() {
@@ -124,33 +125,7 @@ export default function ReadPage() {
         />
         
         <article className="prose prose-lg dark:prose-invert max-w-none">
-          <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-            {article.markdown.split('\n').map((line, i) => {
-              if (line.startsWith('# ')) {
-                return <h1 key={i} className="text-4xl font-bold mt-8 mb-4">{line.slice(2)}</h1>
-              }
-              if (line.startsWith('## ')) {
-                return <h2 key={i} className="text-3xl font-bold mt-6 mb-3">{line.slice(3)}</h2>
-              }
-              if (line.startsWith('### ')) {
-                return <h3 key={i} className="text-2xl font-semibold mt-4 mb-2">{line.slice(4)}</h3>
-              }
-              if (line.startsWith('> ')) {
-                return (
-                  <blockquote key={i} className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground">
-                    {line.slice(2)}
-                  </blockquote>
-                )
-              }
-              if (line.startsWith('- ') || /^\d+\. /.test(line)) {
-                return <li key={i} className="ml-6 mb-2">{line.slice(2)}</li>
-              }
-              if (line.trim() === '') {
-                return <br key={i} />
-              }
-              return <p key={i} className="mb-4">{line}</p>
-            })}
-          </div>
+          <ArticleRenderer content={article.markdown} />
         </article>
       </main>
     </div>
