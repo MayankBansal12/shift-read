@@ -39,7 +39,7 @@ export async function cleanMarkdown(
 ): Promise<{ success: boolean; data?: CleanedArticle; error?: string }> {
   try {
     const { text } = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq(`${process.env.GROQ_MODEL}`),
       messages: [
         {
           role: 'system',
@@ -51,7 +51,6 @@ export async function cleanMarkdown(
         }
       ],
       temperature: 0.2,
-      maxOutputTokens: 32768
     })
 
     let jsonString = text.trim()
@@ -84,8 +83,6 @@ export async function cleanMarkdown(
         error: 'Could not extract meaningful content from the article'
       }
     }
-
-    console.log('cleaned content', cleaned.content)
 
     return {
       success: true,

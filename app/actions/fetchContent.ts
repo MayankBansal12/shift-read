@@ -37,8 +37,6 @@ export async function fetchContent(url: string): Promise<{
       return { success: false, error: 'Failed to extract article content' }
     }
 
-    console.log('result from firecrawl scrape', result)
-
     return {
       success: true,
       data: {

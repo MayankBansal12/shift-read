@@ -35,14 +35,14 @@ export function MDXRender({
 					),
 					p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
 					ul: ({ children }) => (
-						<ul className="mb-4 list-inside list-disc space-y-1">{children}</ul>
+						<ul className="mb-4 list-outside list-disc space-y-1 pl-4">{children}</ul>
 					),
 					ol: ({ children }) => (
-						<ol className="mb-4 list-inside list-decimal space-y-1">
+						<ol className="mb-4 list-outside list-decimal space-y-1 pl-4">
 							{children}
 						</ol>
 					),
-					li: ({ children }) => <li className="ml-4">{children}</li>,
+					li: ({ children }) => <li className="pl-1">{children}</li>,
 					code: ({ children, className }) => {
 						const isInline = !className;
 						return isInline ? (
