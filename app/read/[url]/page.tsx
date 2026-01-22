@@ -1,14 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import ThemeToggle from '@/components/ThemeToggle'
-import ArticleHeader from '@/components/ArticleHeader'
-import ArticleRenderer from '@/components/ArticleRenderer'
-import { fetchContent, type ArticleData } from '@/app/actions/fetchContent'
 import { cleanMarkdown } from '@/app/actions/cleanMarkdown'
+import { fetchContent, type ArticleData } from '@/app/actions/fetchContent'
+import ArticleHeader from '@/components/ArticleHeader'
+import { MDXRender } from '@/components/MDXRender'
+import ThemeToggle from '@/components/ThemeToggle'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function ReadPage() {
   const params = useParams()
@@ -147,9 +147,9 @@ export default function ReadPage() {
           image={article.metadata.ogImage}
         />
         
-        <article className="prose prose-lg dark:prose-invert max-w-none">
-          <ArticleRenderer content={article.markdown} />
-        </article>
+        <div className="prose prose-sm dark:prose-invert max-w-none cursor-text transition-all">
+          <MDXRender content={article.markdown} />
+        </div>
       </main>
     </div>
   )
