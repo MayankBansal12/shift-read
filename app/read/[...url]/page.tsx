@@ -6,6 +6,7 @@ import ArticleHeader from '@/components/ArticleHeader'
 import { MDXRender } from '@/components/MDXRender'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
+import { reconstructUrl } from '@/lib/utils'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -13,7 +14,6 @@ import { useEffect, useState } from 'react'
 export default function ReadPage() {
   const params = useParams()
   const router = useRouter()
-  const decodedUrl = decodeURIComponent(params.url as string)
   
   const [loading, setLoading] = useState(true)
   const [cleanupStatus, setCleanupStatus] = useState('')
@@ -21,8 +21,15 @@ export default function ReadPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+    
     async function loadArticle() {
       try {
+        if (cancelled) return
+        
+        const resolvedParams = await params
+        const decodedUrl = reconstructUrl(resolvedParams.url as string | string[])
+
         setLoading(true)
         setCleanupStatus('')
         setError(null)
@@ -63,7 +70,11 @@ export default function ReadPage() {
     }
 
     loadArticle()
-  }, [decodedUrl])
+
+    return () => {
+      cancelled = true
+    }
+  }, [params])
 
   if (loading) {
     return (
