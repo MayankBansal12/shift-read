@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import ThemeToggle from '@/components/ThemeToggle'
-import ArticleHeader from '@/components/ArticleHeader'
-import ArticleRenderer from '@/components/ArticleRenderer'
+import { cleanMarkdown } from '@/app/actions/cleanMarkdown'
 import { fetchContent, type ArticleData } from '@/app/actions/fetchContent'
+import ArticleHeader from '@/components/ArticleHeader'
+import { MDXRender } from '@/components/MDXRender'
+import ThemeToggle from '@/components/ThemeToggle'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function ReadPage() {
   const params = useParams()
@@ -15,6 +16,7 @@ export default function ReadPage() {
   const decodedUrl = decodeURIComponent(params.url as string)
   
   const [loading, setLoading] = useState(true)
+  const [cleanupStatus, setCleanupStatus] = useState('')
   const [article, setArticle] = useState<ArticleData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,20 +24,41 @@ export default function ReadPage() {
     async function loadArticle() {
       try {
         setLoading(true)
+        setCleanupStatus('')
         setError(null)
         
-        const result = await fetchContent(decodedUrl)
+        setCleanupStatus('Fetching article...')
+        const scrapeResult = await fetchContent(decodedUrl)
         
-        if (!result.success || !result.data) {
-          setError(result.error || 'Failed to load article')
+        if (!scrapeResult.success || !scrapeResult.data) {
+          setError(scrapeResult.error || 'Failed to load article')
           return
         }
 
-        setArticle(result.data)
+        setCleanupStatus('Cleaning up content...')
+        const cleanResult = await cleanMarkdown(
+          scrapeResult.data.markdown,
+          scrapeResult.data.metadata
+        )
+
+        let finalArticle: ArticleData
+
+        if (cleanResult.success && cleanResult.data) {
+          finalArticle = {
+            markdown: cleanResult.data.markdown,
+            metadata: cleanResult.data.metadata
+          }
+        } else {
+          console.warn('Markdown cleanup failed, using raw content:', cleanResult.error)
+          finalArticle = scrapeResult.data
+        }
+
+        setArticle(finalArticle)
       } catch (err) {
         setError('An unexpected error occurred')
       } finally {
         setLoading(false)
+        setCleanupStatus('')
       }
     }
 
@@ -57,7 +80,7 @@ export default function ReadPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">Loading article...</p>
+            <p className="text-muted-foreground">{cleanupStatus || 'Loading article...'}</p>
           </div>
         </main>
       </div>
@@ -124,9 +147,9 @@ export default function ReadPage() {
           image={article.metadata.ogImage}
         />
         
-        <article className="prose prose-lg dark:prose-invert max-w-none">
-          <ArticleRenderer content={article.markdown} />
-        </article>
+        <div className="prose prose-sm dark:prose-invert max-w-none cursor-text transition-all">
+          <MDXRender content={article.markdown} />
+        </div>
       </main>
     </div>
   )
