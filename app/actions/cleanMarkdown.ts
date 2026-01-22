@@ -13,7 +13,13 @@ const groq = createOpenAI({
 const CleanupResponseSchema = z.object({
   content: z.string().describe('Cleaned and formatted markdown content'),
   warnings: z.array(z.string()).optional().describe('Any warnings or notes about the cleanup'),
-  isComplete: z.boolean().describe('Whether the cleanup was successful and content is readable')
+  isComplete: z.boolean().describe('Whether the cleanup was successful and content is readable'),
+  metadata: z.object({
+    title: z.string().nullable().optional().describe('Extracted article title'),
+    author: z.string().nullable().optional().describe('Extracted author name'),
+    publishedTime: z.string().nullable().optional().describe('Publication date in ISO 8601 format'),
+    ogImage: z.string().nullable().optional().describe('Featured image URL from markdown or fallback to firecrawl metadata')
+  }).optional()
 })
 
 export interface CleanedArticle {
@@ -41,7 +47,7 @@ export async function cleanMarkdown(
         },
         {
           role: 'user',
-          content: `Clean the following scraped content. Return only the main article body, excluding any title, featured image, ads, navigation, or related content.\n\n=== CONTENT START ===\n${rawMarkdown}\n=== CONTENT END ===`
+          content: `Clean the following scraped content. Extract metadata (title, author, date, image) and return only the main article body, excluding any title, featured image, ads, navigation, or related content.\n\n=== FIRECRAWL METADATA (FOR CONTEXT) ===\n${JSON.stringify(metadata || {}, null, 2)}\n\n=== CONTENT START ===\n${rawMarkdown}\n=== CONTENT END ===`
         }
       ],
       temperature: 0.2,
@@ -86,10 +92,10 @@ export async function cleanMarkdown(
       data: {
         markdown: cleaned.content,
         metadata: {
-          title: metadata?.title,
-          author: metadata?.author,
-          publishedTime: metadata?.publishedTime,
-          ogImage: metadata?.ogImage,
+          title: cleaned.metadata?.title || metadata?.title,
+          author: cleaned.metadata?.author || metadata?.author,
+          publishedTime: cleaned.metadata?.publishedTime || metadata?.publishedTime,
+          ogImage: cleaned.metadata?.ogImage || metadata?.ogImage,
           language: metadata?.language
         }
       }
