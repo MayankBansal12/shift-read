@@ -3,6 +3,7 @@
 import { generateText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod'
+import { CLEANUP_SYSTEM_PROMPT } from '@/lib/system-prompt'
 
 const groq = createOpenAI({
   baseURL: 'https://api.groq.com/openai/v1',
@@ -26,42 +27,6 @@ export interface CleanedArticle {
   }
 }
 
-const CLEANUP_SYSTEM_PROMPT = `You are a markdown cleaning and formatting expert for scraped web content.
-
-The content you receive is extracted from a webpage and will contain:
-- Unnecessary ads, banners, and promotional content
-- Navigation elements, footers, and sidebars
-- Interruptions from embedded content (social media posts, newsletters)
-- Broken or malformed markdown from the extraction process
-- HTML entities and encoding issues
-- Inconsistent formatting and structure
-
-Your task is to extract ONLY the main article content and return it as clean, well-formatted markdown.
-
-Rules:
-1. Remove ALL ads, promotional content, and navigation elements
-2. Remove social media embeds, newsletter signups, and related content
-3. Remove the article's featured image if present (it will be handled separately)
-4. Fix broken or malformed markdown syntax
-5. Fix encoding issues (HTML entities, weird characters)
-6. Preserve all meaningful article content and structure
-7. Ensure proper heading hierarchy (H1 → H2 → H3, no skips)
-8. Fix code blocks with proper language annotations
-9. Preserve links and fix broken ones
-10. Keep tables, blockquotes, lists properly formatted
-11. Remove excessive newlines or add necessary ones for readability
-12. If content appears to be mostly boilerplate/navigation with no main article, set isComplete to false
-13. Return the final cleaned content ready for reading
-
-IMPORTANT: You must return your response as a valid JSON object with the following structure:
-{
-  "content": "The cleaned markdown content here",
-  "warnings": ["Any warnings or notes about what was removed"],
-  "isComplete": true/false
-}
-
-Do not include any additional text or markdown code blocks - just the raw JSON object.`
-
 export async function cleanMarkdown(
   rawMarkdown: string,
   metadata?: Record<string, string | undefined>
@@ -83,15 +48,29 @@ export async function cleanMarkdown(
       maxOutputTokens: 32768
     })
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    let jsonString = text.trim()
+    jsonString = jsonString.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/i, '').trim()
+    const jsonMatch = jsonString.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
+      console.error('No JSON found in response:', text.substring(0, 500))
       return {
         success: false,
         error: 'Failed to parse cleanup response'
       }
     }
 
-    const cleaned = CleanupResponseSchema.parse(JSON.parse(jsonMatch[0]))
+    let parsedJson
+    try {
+      parsedJson = JSON.parse(jsonMatch[0])
+    }catch (parseError) {
+      console.error('JSON parse error:', parseError)
+      return {
+        success: false,
+        error: 'Failed to parse cleanup response: invalid JSON format'
+      }
+    }
+
+    const cleaned = CleanupResponseSchema.parse(parsedJson)
 
     if (!cleaned.isComplete || !cleaned.content.trim()) {
       return {
@@ -99,6 +78,8 @@ export async function cleanMarkdown(
         error: 'Could not extract meaningful content from the article'
       }
     }
+
+    console.log('cleaned content', cleaned.content)
 
     return {
       success: true,
