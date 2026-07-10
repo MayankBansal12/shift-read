@@ -5,10 +5,12 @@ import { fetchContent, type ArticleData } from '@/app/actions/fetchContent'
 import { translateMarkdown } from '@/app/actions/translate'
 import ArticleHeader from '@/components/ArticleHeader'
 import LanguageSelector from '@/components/LanguageSelector'
+import ListenToArticle from '@/components/ListenToArticle'
 import { MDXRender } from '@/components/MDXRender'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { getFromPdfSession, getFromStorage, isPdfToken, pdfIdFromToken, savePdfToSession, saveToStorage } from '@/lib/storage'
+import { useArticleTTS } from '@/hooks/useArticleTTS'
 import { reconstructUrl } from '@/lib/utils'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -30,6 +32,12 @@ export default function ReadPage() {
   const [showOriginal, setShowOriginal] = useState(true)
   const [pdfId, setPdfId] = useState<string | null>(null)
   const [pdfImages, setPdfImages] = useState<string[]>([])
+
+  const listenText = showOriginal
+    ? (article?.markdown ?? '')
+    : (translatedContent ?? article?.markdown ?? '')
+
+  const tts = useArticleTTS({ text: listenText, disabled: loading || !article })
 
   useEffect(() => {
     let cancelled = false
@@ -318,6 +326,21 @@ export default function ReadPage() {
           author={article.metadata.author}
           date={article.metadata.publishedTime}
           image={article.metadata.ogImage}
+        />
+
+        <ListenToArticle
+          state={tts.state}
+          audioRef={tts.audioRef}
+          chunks={tts.chunks}
+          tooLong={tts.tooLong}
+          empty={tts.empty}
+          words={tts.words}
+          chars={tts.chars}
+          readingMinutes={tts.readingMinutes}
+          volume={tts.volume}
+          onToggle={tts.onToggle}
+          onVolumeChange={tts.onVolumeChange}
+          onMuteToggle={tts.onMuteToggle}
         />
 
         <div className="prose prose-sm dark:prose-invert max-w-none cursor-text transition-all">
