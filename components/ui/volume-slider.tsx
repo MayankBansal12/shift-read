@@ -24,7 +24,12 @@ export default function VolumeSlider({
       value={value}
       onChange={e => onChange(parseFloat(e.target.value))}
       aria-label={ariaLabel}
-      className={cn('w-28 accent-primary cursor-pointer', className)}
+      className={cn(
+        'w-28 accent-primary cursor-pointer appearance-none bg-transparent',
+        '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0 [&::-webkit-slider-thumb]:h-0 [&::-webkit-slider-thumb]:bg-transparent [&::-webkit-slider-thumb]:border-none',
+        '[&::-moz-range-thumb]:w-0 [&::-moz-range-thumb]:h-0 [&::-moz-range-thumb]:bg-transparent [&::-moz-range-thumb]:border-none',
+        className
+      )}
     />
   )
 }

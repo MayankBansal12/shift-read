@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import VolumeSlider from '@/components/ui/volume-slider'
 import SpeakingAnimation from '@/components/SpeakingAnimation'
 import type { TTSState } from '@/hooks/useArticleTTS'
+import { useEffect, useRef, useState } from 'react'
 
 interface ListenToArticleProps {
   state: TTSState
@@ -50,7 +51,6 @@ export default function ListenToArticle({
   tooLong,
   empty,
   words,
-  chars,
   readingMinutes,
   volume,
   disabled = false,
@@ -71,11 +71,6 @@ export default function ListenToArticle({
   const transportDisabled =
     disabled || tooLong || empty || isLoading || state.kind === 'buffering'
 
-  const chunkPosition =
-    state.kind === 'playing' || state.kind === 'paused' || state.kind === 'buffering'
-      ? state.chunkIdx + 1
-      : null
-
   const buttonText = isError
     ? 'Retry'
     : isLoading
@@ -86,74 +81,89 @@ export default function ListenToArticle({
           ? 'Resume'
           : chunks.length === 0
             ? 'Nothing to read aloud'
-            : state.kind === 'ended'
-              ? 'Listen again'
-              : 'Listen to this article'
+            : 'Listen'
 
   const VolIcon = volumeIcon(volume)
+
+  const [volumeOpen, setVolumeOpen] = useState(false)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearHideTimer = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }
+
+  const scheduleHide = () => {
+    clearHideTimer()
+    hideTimerRef.current = setTimeout(() => setVolumeOpen(false), 3000)
+  }
+
+  const showVolume = () => {
+    clearHideTimer()
+    setVolumeOpen(true)
+  }
+
+  useEffect(() => () => clearHideTimer(), [])
 
   return (
     <section
       aria-label="Listen to this article"
-      className="not-prose mb-8 flex flex-col gap-3 rounded-lg border border-border bg-card/40 p-4"
+      className="not-prose mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border p-4 text-sm text-muted-foreground"
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-        <span>
-          <strong className="text-foreground">{words.toLocaleString()}</strong> words
-        </span>
-        <span aria-hidden>·</span>
-        <span>
-          <strong className="text-foreground">{chars.toLocaleString()}</strong> chars
-        </span>
-        <span aria-hidden>·</span>
-        <span>~{readingMinutes} min read</span>
-        {chunks.length > 0 && !tooLong && (
-          <span aria-hidden>·</span>
-        )}
-        {chunks.length > 0 && !tooLong && (
-          <span>~{chunks.length} listen chunk{chunks.length === 1 ? '' : 's'}</span>
-        )}
-        {tooLong && (
-          <span className="text-destructive">Article is too long to listen to in one session.</span>
-        )}
-        {empty && !tooLong && (
-          <span className="text-muted-foreground">Nothing to read aloud.</span>
-        )}
-        {isError && (
-          <span className="text-destructive">· {state.message}</span>
-        )}
-      </div>
+      <span>
+        <strong className="text-foreground">{words.toLocaleString()}</strong> words
+      </span>
+      <span aria-hidden>·</span>
+      <span>
+        ~<strong className="text-foreground">{readingMinutes}</strong> min read
+      </span>
+      {tooLong && (
+        <span className="text-destructive">Article is too long to listen to in one session.</span>
+      )}
+      {empty && !tooLong && (
+        <span>Nothing to read aloud.</span>
+      )}
+      {isError && (
+        <span className="text-destructive">· {state.message}</span>
+      )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
-          size="lg"
-          onClick={onToggle}
-          disabled={transportDisabled}
-          aria-label={buttonAriaLabel(state)}
-        >
-          {isAnimating ? (
-            <SpeakingAnimation />
-          ) : (
-            <HugeiconsIcon icon={transportIcon} className="size-5" />
-          )}
-          <span className="ml-2">{buttonText}</span>
-        </Button>
+      <Button
+        variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
+        size="lg"
+        onClick={onToggle}
+        disabled={transportDisabled}
+        aria-label={buttonAriaLabel(state)}
+        className="ml-auto"
+      >
+        {isAnimating ? (
+          <SpeakingAnimation />
+        ) : (
+          <HugeiconsIcon icon={transportIcon} className="size-5" />
+        )}
+        <span>{buttonText}</span>
+      </Button>
 
+      <div
+        className="flex items-center gap-2"
+        onMouseEnter={showVolume}
+        onMouseLeave={scheduleHide}
+      >
         <button
-          onClick={onMuteToggle}
+          onClick={() => {
+            onMuteToggle()
+            setVolumeOpen(v => !v)
+            scheduleHide()
+          }}
           aria-label={volume === 0 ? 'Unmute' : 'Mute'}
           className="p-2 rounded-md hover:bg-muted transition-colors"
         >
           <HugeiconsIcon icon={VolIcon} className="size-5" />
         </button>
 
-        <VolumeSlider value={volume} onChange={onVolumeChange} />
-
-        {chunkPosition !== null && chunks.length > 1 && (
-          <span className="text-xs text-muted-foreground">
-            {chunkPosition}/{chunks.length}
-          </span>
+        {volumeOpen && (
+          <VolumeSlider value={volume} onChange={onVolumeChange} />
         )}
       </div>
 
