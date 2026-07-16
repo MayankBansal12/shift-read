@@ -8,7 +8,7 @@ import LanguageSelector from '@/components/LanguageSelector'
 import { MDXRender } from '@/components/MDXRender'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
-import { getFromStorage, saveToStorage } from '@/lib/storage'
+import { getFromPdfSession, getFromStorage, isPdfToken, pdfIdFromToken, savePdfToSession, saveToStorage } from '@/lib/storage'
 import { reconstructUrl } from '@/lib/utils'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -26,6 +26,8 @@ export default function ReadPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null)
   const [translating, setTranslating] = useState(false)
   const [showOriginal, setShowOriginal] = useState(true)
+  const [pdfId, setPdfId] = useState<string | null>(null)
+  const [pdfImages, setPdfImages] = useState<string[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -35,7 +37,14 @@ export default function ReadPage() {
         if (cancelled) return
 
         const resolvedParams = await params
-        const decodedUrl = reconstructUrl(resolvedParams.url as string | string[])
+        const seg = resolvedParams.url
+        const rawToken = Array.isArray(seg) ? seg[0] : seg
+        let token: string
+        try {
+          token = decodeURIComponent(rawToken as string)
+        } catch {
+          token = rawToken as string
+        }
 
         setLoading(true)
         setCleanupStatus('')
@@ -43,6 +52,36 @@ export default function ReadPage() {
         setTranslatedContent(null)
         setSelectedLanguage(null)
         setShowOriginal(true)
+
+        if (isPdfToken(token)) {
+          const id = pdfIdFromToken(token)
+          setPdfId(id)
+          const sessionArticle = getFromPdfSession(id)
+          if (!sessionArticle) {
+            setError('This PDF is no longer available. Please re-upload from home.')
+            return
+          }
+          setArticle({
+            markdown: sessionArticle.article.content,
+            metadata: {
+              title: sessionArticle.article.title,
+              author: sessionArticle.article.author,
+              publishedTime: sessionArticle.article.date
+            }
+          })
+          setPdfImages(sessionArticle.article.images ?? [])
+          if (sessionArticle.translation) {
+            setTranslatedContent(sessionArticle.translation.content)
+            setSelectedLanguage(sessionArticle.translation.language)
+            setShowOriginal(false)
+          }
+          setLoading(false)
+          return
+        }
+        setPdfId(null)
+        setPdfImages([])
+
+        const decodedUrl = reconstructUrl(seg as string | string[])
 
         const cached = getFromStorage(decodedUrl)
         if (cached) {
@@ -139,23 +178,29 @@ export default function ReadPage() {
       setShowOriginal(false)
       setSelectedLanguage(language)
 
-      const resolvedParams = await params
-      const decodedUrl = reconstructUrl(resolvedParams.url as string | string[])
-      saveToStorage(decodedUrl, {
+      const articleRecord = {
         article: {
           content: article.markdown,
           title: article.metadata.title,
           author: article.metadata.author,
           date: article.metadata.publishedTime,
-          image: article.metadata.ogImage,
+          images: pdfImages,
           sourceLanguage: article.metadata.language
         },
-        translation: {
-          content: result.data,
-          language
-        },
+        translation: { content: result.data, language },
         timestamp: Date.now()
-      })
+      }
+
+      if (pdfId) {
+        savePdfToSession(pdfId, articleRecord)
+      } else {
+        const resolvedParams = await params
+        const decodedUrl = reconstructUrl(resolvedParams.url as string | string[])
+        saveToStorage(decodedUrl, {
+          ...articleRecord,
+          article: { ...articleRecord.article, image: article.metadata.ogImage }
+        })
+      }
     }
 
     setTranslating(false)
@@ -259,7 +304,13 @@ export default function ReadPage() {
         />
 
         <div className="prose prose-sm dark:prose-invert max-w-none cursor-text transition-all">
-          <MDXRender content={showOriginal ? article.markdown : translatedContent || ''} />
+          <MDXRender content={(pdfImages.length
+            ? (showOriginal ? article.markdown : translatedContent || '').replace(/\[img:(\d+)\]/g, (_, i) => {
+                const url = pdfImages[Number(i)]
+                return url ? `![image](${url})` : ''
+              })
+            : showOriginal ? article.markdown : translatedContent || ''
+          )} />
         </div>
       </main>
     </div>

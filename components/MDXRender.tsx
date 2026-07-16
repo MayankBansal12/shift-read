@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface MDXRenderProps {
 	content: string;
@@ -19,6 +20,7 @@ export function MDXRender({
 			}}
 		>
 			<ReactMarkdown
+				remarkPlugins={[remarkGfm]}
 				components={{
 					h1: ({ children }) => (
 						<h1 className="my-4 font-bold text-3xl first:mt-0">{children}</h1>
@@ -63,7 +65,14 @@ export function MDXRender({
 							{children}
 						</blockquote>
 					),
-					a: ({ children, href }) => (
+					img: ({ src, alt }) => (
+					<img
+						src={src}
+						alt={alt}
+						className="max-w-full h-auto rounded-lg my-4"
+					/>
+				),
+				a: ({ children, href }) => (
 						<a
 							href={href}
 							className="text-primary underline hover:text-primary/80"
