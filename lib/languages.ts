@@ -89,7 +89,6 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'my', name: 'Burmese', nativeName: 'မြန်မာ', region: 'Asia' },
   { code: 'km', name: 'Khmer', nativeName: 'ខ្មែរ', region: 'Asia' },
   { code: 'lo', name: 'Lao', nativeName: 'ລາວ', region: 'Asia' },
-  { code: 'mn', name: 'Mongolian', nativeName: 'Монгол', region: 'Asia' },
   { code: 'am', name: 'Amharic', nativeName: 'አማርኛ', region: 'Africa' },
   { code: 'so', name: 'Somali', nativeName: 'Soomaali', region: 'Africa' },
 ]

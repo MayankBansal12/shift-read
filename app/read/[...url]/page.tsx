@@ -12,11 +12,12 @@ import { getFromPdfSession, getFromStorage, isPdfToken, pdfIdFromToken, savePdfT
 import { reconstructUrl } from '@/lib/utils'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function ReadPage() {
   const params = useParams()
   const router = useRouter()
+  const decodedUrlRef = useRef<string>('')
 
   const [loading, setLoading] = useState(true)
   const [cleanupStatus, setCleanupStatus] = useState('')
@@ -25,6 +26,7 @@ export default function ReadPage() {
   const [translatedContent, setTranslatedContent] = useState<string | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null)
   const [translating, setTranslating] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
   const [showOriginal, setShowOriginal] = useState(true)
   const [pdfId, setPdfId] = useState<string | null>(null)
   const [pdfImages, setPdfImages] = useState<string[]>([])
@@ -34,9 +36,9 @@ export default function ReadPage() {
 
     async function loadArticle() {
       try {
+        const resolvedParams = await params
         if (cancelled) return
 
-        const resolvedParams = await params
         const seg = resolvedParams.url
         const rawToken = Array.isArray(seg) ? seg[0] : seg
         let token: string
@@ -82,6 +84,11 @@ export default function ReadPage() {
         setPdfImages([])
 
         const decodedUrl = reconstructUrl(seg as string | string[])
+        if (!decodedUrl.startsWith('https://') && !decodedUrl.startsWith('http://')) {
+          setError('Invalid URL. Please go back and enter a valid article URL.')
+          return
+        }
+        decodedUrlRef.current = decodedUrl
 
         const cached = getFromStorage(decodedUrl)
         if (cached) {
@@ -107,6 +114,8 @@ export default function ReadPage() {
         setCleanupStatus('Fetching article...')
         const scrapeResult = await fetchContent(decodedUrl)
 
+        if (cancelled) return
+
         if (!scrapeResult.success || !scrapeResult.data) {
           setError(scrapeResult.error || 'Failed to load article')
           return
@@ -117,6 +126,8 @@ export default function ReadPage() {
           scrapeResult.data.markdown,
           scrapeResult.data.metadata
         )
+
+        if (cancelled) return
 
         let finalArticle: ArticleData
 
@@ -142,7 +153,7 @@ export default function ReadPage() {
           },
           timestamp: Date.now()
         })
-      } catch (err) {
+      } catch (_err) {
         setError('An unexpected error occurred')
       } finally {
         setLoading(false)
@@ -159,6 +170,8 @@ export default function ReadPage() {
 
   async function handleLanguageChange(language: string | null) {
     if (!article) return
+
+    setTranslateError(null)
 
     if (language === null) {
       setShowOriginal(true)
@@ -194,13 +207,14 @@ export default function ReadPage() {
       if (pdfId) {
         savePdfToSession(pdfId, articleRecord)
       } else {
-        const resolvedParams = await params
-        const decodedUrl = reconstructUrl(resolvedParams.url as string | string[])
-        saveToStorage(decodedUrl, {
+        saveToStorage(decodedUrlRef.current, {
           ...articleRecord,
           article: { ...articleRecord.article, image: article.metadata.ogImage }
         })
       }
+    } else {
+      setTranslateError(result.error || 'Translation failed')
+      setShowOriginal(true)
     }
 
     setTranslating(false)
@@ -288,6 +302,9 @@ export default function ReadPage() {
               >
                 {showOriginal ? 'Recent Translation' : 'Show Original'}
               </button>
+            )}
+            {translateError && (
+              <span className="text-xs text-destructive">{translateError}</span>
             )}
 
             <ThemeToggle />

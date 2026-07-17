@@ -43,7 +43,7 @@ export async function fetchContent(url: string): Promise<{
         markdown: result.markdown,
         metadata: {
           title: result.metadata?.title,
-          author: result.metadata?.dcTermsAudience as string | undefined,
+          author: (result.metadata as Record<string, unknown>)?.author as string | undefined,
           publishedTime: result.metadata?.publishedTime,
           ogImage: result.metadata?.ogImage,
           language: result.metadata?.language
