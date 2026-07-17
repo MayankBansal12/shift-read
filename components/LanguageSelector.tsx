@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { SUPPORTED_LANGUAGES, REGIONS, getLanguageByCode, type Language } from '@/lib/languages'
 
 interface LanguageSelectorProps {
@@ -33,17 +33,21 @@ export default function LanguageSelector({
       )
     : []
 
-  const languagesByRegion = REGIONS.reduce(
-    (acc, region) => {
-      const languages = SUPPORTED_LANGUAGES.filter(
-        lang => lang.region === region && lang.code !== sourceLanguage
-      )
-      if (languages.length > 0) {
-        acc[region] = languages
-      }
-      return acc
-    },
-    {} as Record<string, Language[]>
+  const languagesByRegion = useMemo(
+    () =>
+      REGIONS.reduce(
+        (acc, region) => {
+          const languages = SUPPORTED_LANGUAGES.filter(
+            lang => lang.region === region && lang.code !== sourceLanguage
+          )
+          if (languages.length > 0) {
+            acc[region] = languages
+          }
+          return acc
+        },
+        {} as Record<string, Language[]>
+      ),
+    [sourceLanguage]
   )
 
   useEffect(() => {
@@ -64,9 +68,10 @@ export default function LanguageSelector({
 
   useEffect(() => {
     if (isOpen && Object.keys(languagesByRegion).length > 0 && !activeRegion) {
-      setActiveRegion(Object.keys(languagesByRegion)[0])
+      const firstRegion = Object.keys(languagesByRegion)[0]
+      if (firstRegion) setActiveRegion(firstRegion)
     }
-  }, [isOpen, languagesByRegion, activeRegion])
+  }, [isOpen, languagesByRegion])
 
   const handleSelect = (languageCode: string | null) => {
     setSelectedLanguage(languageCode)
