@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '30mb',
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: '/:path+',
+        destination: '/read/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

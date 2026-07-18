@@ -5,19 +5,48 @@ import { Button } from '@/components/ui/button'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Sun01Icon, Moon01Icon } from '@hugeicons/core-free-icons'
 
+function getSystemTheme(): 'dark' | 'light' {
+  if (typeof window === 'undefined') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function getStoredTheme(): 'dark' | 'light' {
+  try {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'dark' || stored === 'light') return stored
+  } catch {}
+  return getSystemTheme()
+}
+
+function applyTheme(theme: 'dark' | 'light') {
+  const html = document.documentElement
+  if (theme === 'dark') {
+    html.classList.add('dark')
+  } else {
+    html.classList.remove('dark')
+  }
+}
+
+function persistTheme(theme: 'dark' | 'light') {
+  try {
+    localStorage.setItem('theme', theme)
+  } catch {}
+}
+
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
-    const html = document.documentElement
-    const isDarkMode = html.classList.contains('dark')
-    setIsDark(isDarkMode)
+    const theme = getStoredTheme()
+    applyTheme(theme)
+    setIsDark(theme === 'dark')
   }, [])
 
   const toggleTheme = () => {
-    const html = document.documentElement
-    html.classList.toggle('dark')
-    setIsDark(html.classList.contains('dark'))
+    const next = isDark ? 'light' : 'dark'
+    applyTheme(next)
+    persistTheme(next)
+    setIsDark(!isDark)
   }
 
   return (

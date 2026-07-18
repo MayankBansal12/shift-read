@@ -34,7 +34,7 @@ export default function Home() {
 
     setError("");
     const encoded = encodeURIComponent(url);
-    router.push(`/read/${encoded}`);
+    router.push(`/${encoded}`);
   };
 
   const handleSubmitPdf = async (e: React.FormEvent) => {
@@ -100,7 +100,8 @@ export default function Home() {
             Read any blog or PDF in your language
           </p>
           <p className="text-md text-muted-foreground">
-            Paste a URL or upload a PDF below to read and translate.
+            Paste url below or append <span className="font-semibold">{process.env.NEXT_PUBLIC_CLIENT_URL}/</span> in front of any
+            blog to enable read and translate.
           </p>
         </div>
 

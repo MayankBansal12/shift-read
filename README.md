@@ -63,11 +63,12 @@ The translation preserves:
 
 3. **Set up environment variables**
    
-   Create a `.env.local` file in the project root:
-   ```env
-   FIRECRAWL_API_KEY=your_firecrawl_api_key_here
-   LINGODOTDEV_API_KEY=your_lingodotdev_api_key_here
-   ```
+    Create a `.env.local` file in the project root:
+    ```env
+    FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+    LINGODOTDEV_API_KEY=your_lingodotdev_api_key_here
+    NEXT_PUBLIC_CLIENT_URL=shft.page
+    ```
 
 4. **Get API Keys**
    - **Firecrawl**: Sign up at [firecrawl.dev](https://firecrawl.dev) to get your API key
@@ -208,6 +209,7 @@ Required environment variables:
 ```env
 FIRECRAWL_API_KEY=    # Firecrawl API key for web scraping
 LINGODOTDEV_API_KEY=  # lingo.dev API key for translation
+NEXT_PUBLIC_CLIENT_URL=shft.page  # Public client URL displayed in the homepage hint
 ```
 
 ## 🐛 Troubleshooting
