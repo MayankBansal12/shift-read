@@ -41,6 +41,10 @@ export default function ReadPage() {
 
   const tts = useArticleTTS({ text: listenText, disabled: loading || !article })
 
+  const displayedLanguage = showOriginal
+    ? (article?.metadata.language ?? null)
+    : selectedLanguage
+
   useEffect(() => {
     let cancelled = false
 
@@ -291,6 +295,16 @@ export default function ReadPage() {
             Shift
           </Link>
           <div className="flex items-center gap-4">
+            {translatedContent && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowOriginal(!showOriginal)}
+              >
+                {showOriginal ? 'Recent Translation' : 'Show Original'}
+              </Button>
+            )}
+
             {translating ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -299,19 +313,10 @@ export default function ReadPage() {
             ) : (
               <LanguageSelector
                 sourceLanguage={article.metadata.language}
-                selectedLanguage={selectedLanguage}
+                selectedLanguage={displayedLanguage}
                 onLanguageChange={handleLanguageChange}
                 disabled={loading}
               />
-            )}
-
-            {translatedContent && (
-              <button
-                onClick={() => setShowOriginal(!showOriginal)}
-                className="px-3 py-1.5 text-sm border rounded-md hover:bg-muted transition-colors"
-              >
-                {showOriginal ? 'Recent Translation' : 'Show Original'}
-              </button>
             )}
             {translateError && (
               <span className="text-xs text-destructive">{translateError}</span>

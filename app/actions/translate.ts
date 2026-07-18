@@ -1,6 +1,6 @@
 'use server'
 
-import { LingoDotDevEngine } from 'lingo.dev/sdk'
+import { JigsawStack } from 'jigsawstack'
 
 export async function translateMarkdown(
   markdown: string,
@@ -8,18 +8,26 @@ export async function translateMarkdown(
   targetLanguage: string
 ): Promise<{ success: boolean; data?: string; error?: string }> {
   try {
-    const lingoDotDev = new LingoDotDevEngine({
-      apiKey: process.env.LINGODOTDEV_API_KEY
+    const jigsaw = JigsawStack({
+      apiKey: process.env.JIGSAW_STACK_KEY || ''
     })
 
-    const translated = await lingoDotDev.localizeText(markdown, {
-      sourceLocale: sourceLanguage ?? null,
-      targetLocale: targetLanguage
-    })
+    const result = await jigsaw.translate.text({
+      text: markdown,
+      target_language: targetLanguage,
+      ...(sourceLanguage ? { current_language: sourceLanguage } : {})
+    } as Parameters<typeof jigsaw.translate.text>[0])
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: 'Failed to translate content'
+      }
+    }
 
     return {
       success: true,
-      data: translated as string
+      data: result.translated_text as string
     }
   } catch (error) {
     console.error('Translation error:', error)
