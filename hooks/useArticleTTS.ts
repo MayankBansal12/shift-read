@@ -6,6 +6,16 @@ import { ArticleTooLongError, chunkText } from '@/lib/tts/chunker'
 import { charCount, readingTimeMin, wordCount } from '@/lib/tts/readingTime'
 import { PREFETCH_LEAD_S, VOICE } from '@/lib/tts/constants'
 
+function friendlyErrorMessage(raw: string): string {
+  if (raw.includes('timed out')) return 'Speech generation took too long. Try again.'
+  if (raw.includes('Groq API key')) return 'Speech service is unavailable right now. Try again later.'
+  if (raw.includes('Groq 401')) return 'Speech service is unavailable right now. Try again later.'
+  if (raw.includes('Groq 500')) return 'Speech service encountered an error. Try again.'
+  if (raw.includes('Groq 429')) return 'Speech service is busy. Try again in a moment.'
+  if (raw.includes('Groq')) return 'Speech service had a problem. Try again.'
+  return 'Something went wrong generating speech. Try again.'
+}
+
 export type TTSState =
   | { kind: 'idle' }
   | { kind: 'loading'; chunkIdx: 0 }
@@ -22,6 +32,7 @@ export type TTSAction =
   | { type: 'PAUSE' }
   | { type: 'TIME'; currentTime: number }
   | { type: 'ENDED_NEXT'; chunkIdx: number }
+  | { type: 'NEXT_CHUNK' }
   | { type: 'ENDED_ALL' }
   | { type: 'ERROR'; message: string }
   | { type: 'RESET' }
@@ -76,6 +87,12 @@ export function reduce(state: TTSState, action: TTSAction): TTSState {
     case 'ENDED_NEXT': {
       if (state.kind === 'playing' && action.chunkIdx === state.chunkIdx) {
         return { kind: 'buffering', chunkIdx: state.chunkIdx }
+      }
+      return state
+    }
+    case 'NEXT_CHUNK': {
+      if (state.kind === 'playing') {
+        return { kind: 'playing', chunkIdx: state.chunkIdx + 1, currentTime: 0 }
       }
       return state
     }
@@ -208,7 +225,7 @@ export function useArticleTTS({ text, disabled = false }: UseArticleTTSOptions):
             prefetchedRef.current.set(idx, result.blob)
             dispatch({ type: 'FETCHED', chunkIdx: idx, blob: result.blob })
           } else {
-            dispatch({ type: 'ERROR', message: result.error })
+            dispatch({ type: 'ERROR', message: friendlyErrorMessage(result.error) })
           }
         })
         .catch((e: Error) => {
@@ -314,6 +331,7 @@ export function useArticleTTS({ text, disabled = false }: UseArticleTTSOptions):
       }
       if (prefetchedRef.current.has(nextIdx)) {
         swapAndPlay(nextIdx)
+        dispatch({ type: 'NEXT_CHUNK' })
         return
       }
       dispatch({ type: 'ENDED_NEXT', chunkIdx: idx })

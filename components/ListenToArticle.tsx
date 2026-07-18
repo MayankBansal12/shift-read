@@ -2,6 +2,7 @@
 
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  AlertCircleIcon,
   PauseIcon,
   PlayIcon,
   VolumeHighIcon,
@@ -10,7 +11,6 @@ import {
 } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import VolumeSlider from '@/components/ui/volume-slider'
-import SpeakingAnimation from '@/components/SpeakingAnimation'
 import type { TTSState } from '@/hooks/useArticleTTS'
 import { useEffect, useRef, useState } from 'react'
 
@@ -58,11 +58,11 @@ export default function ListenToArticle({
   onVolumeChange,
   onMuteToggle,
 }: ListenToArticleProps) {
-  const isAnimating = state.kind === 'playing' || state.kind === 'buffering'
-  const isPlayingOrBuffering = isAnimating
+  const isPlayingOrBuffering = state.kind === 'playing' || state.kind === 'buffering'
   const isLoading = state.kind === 'loading' && state.chunkIdx === 0
   const isPaused = state.kind === 'paused'
   const isError = state.kind === 'error'
+  const isActive = isPlayingOrBuffering || isPaused
 
   let transportIcon = PlayIcon
   if (isPlayingOrBuffering || isLoading) transportIcon = PauseIcon
@@ -75,13 +75,15 @@ export default function ListenToArticle({
     ? 'Retry'
     : isLoading
       ? 'Loading…'
-      : isPlayingOrBuffering
-        ? 'Pause'
-        : isPaused
-          ? 'Resume'
-          : chunks.length === 0
-            ? 'Nothing to read aloud'
-            : 'Listen'
+      : state.kind === 'buffering'
+        ? 'Buffering…'
+        : isPlayingOrBuffering
+          ? 'Pause'
+          : isPaused
+            ? 'Resume'
+            : chunks.length === 0
+              ? 'Nothing to read aloud'
+              : 'Listen'
 
   const VolIcon = volumeIcon(volume)
 
@@ -97,7 +99,7 @@ export default function ListenToArticle({
 
   const scheduleHide = () => {
     clearHideTimer()
-    hideTimerRef.current = setTimeout(() => setVolumeOpen(false), 3000)
+    hideTimerRef.current = setTimeout(() => setVolumeOpen(false), 1500)
   }
 
   const showVolume = () => {
@@ -110,62 +112,71 @@ export default function ListenToArticle({
   return (
     <section
       aria-label="Listen to this article"
-      className="not-prose mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border p-4 text-sm text-muted-foreground"
+      className="not-prose mb-8 rounded-lg border border-border py-2 px-3 text-sm text-muted-foreground"
     >
-      <span>
-        <strong className="text-foreground">{words.toLocaleString()}</strong> words
-      </span>
-      <span aria-hidden>·</span>
-      <span>
-        ~<strong className="text-foreground">{readingMinutes}</strong> min read
-      </span>
-      {tooLong && (
-        <span className="text-destructive">Article is too long to listen to in one session.</span>
-      )}
-      {empty && !tooLong && (
-        <span>Nothing to read aloud.</span>
-      )}
-      {isError && (
-        <span className="text-destructive">· {state.message}</span>
-      )}
-
-      <Button
-        variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
-        size="lg"
-        onClick={onToggle}
-        disabled={transportDisabled}
-        aria-label={buttonAriaLabel(state)}
-        className="ml-auto"
-      >
-        {isAnimating ? (
-          <SpeakingAnimation />
-        ) : (
-          <HugeiconsIcon icon={transportIcon} className="size-5" />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 w-full">
+        <span>
+          <strong className="text-foreground">{words.toLocaleString()}</strong> words
+        </span>
+        <span aria-hidden className="font-bold">·</span>
+        <span>
+          ~<strong className="text-foreground">{readingMinutes}</strong> min read
+        </span>
+        {tooLong && (
+          <span className="text-destructive">Article is too long to listen to in one session.</span>
         )}
-        <span>{buttonText}</span>
-      </Button>
+        {empty && !tooLong && (
+          <span>Nothing to read aloud.</span>
+        )}
 
-      <div
-        className="flex items-center gap-2"
-        onMouseEnter={showVolume}
-        onMouseLeave={scheduleHide}
-      >
-        <button
-          onClick={() => {
-            onMuteToggle()
-            setVolumeOpen(v => !v)
-            scheduleHide()
-          }}
-          aria-label={volume === 0 ? 'Unmute' : 'Mute'}
-          className="p-2 rounded-md hover:bg-muted transition-colors"
+        <Button
+          variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
+          size="lg"
+          onClick={onToggle}
+          disabled={transportDisabled}
+          aria-label={buttonAriaLabel(state)}
+          className="ml-auto"
         >
-          <HugeiconsIcon icon={VolIcon} className="size-5" />
-        </button>
+          <HugeiconsIcon icon={transportIcon} className="size-5" />
+          <span>{buttonText}</span>
+        </Button>
 
-        {volumeOpen && (
-          <VolumeSlider value={volume} onChange={onVolumeChange} />
+        {isActive && (
+          <div
+            className="relative flex items-center"
+            onMouseEnter={showVolume}
+            onMouseLeave={scheduleHide}
+          >
+            <button
+              onClick={() => {
+                onMuteToggle()
+                setVolumeOpen(v => !v)
+                scheduleHide()
+              }}
+              aria-label={volume === 0 ? 'Unmute' : 'Mute'}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+            >
+              <HugeiconsIcon icon={VolIcon} className="size-5" />
+            </button>
+            {volumeOpen && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-2 z-20 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                <VolumeSlider
+                  value={volume}
+                  onChange={onVolumeChange}
+                  className="rounded-lg border border-border bg-popover/85 backdrop-blur-sm p-2 shadow-md"
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
+
+      {isError && (
+        <div className="w-full flex items-center justify-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-2 mt-2">
+          <HugeiconsIcon icon={AlertCircleIcon} className="size-4 shrink-0" />
+          <span>{state.message}</span>
+        </div>
+      )}
 
       <audio ref={audioRef} hidden preload="none" />
     </section>
