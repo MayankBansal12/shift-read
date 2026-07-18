@@ -37,6 +37,8 @@ export default function ReadPage() {
     ? (article?.markdown ?? '')
     : (translatedContent ?? article?.markdown ?? '')
 
+  const listenDisabled = !!(translatedContent && !showOriginal)
+
   const tts = useArticleTTS({ text: listenText, disabled: loading || !article })
 
   useEffect(() => {
@@ -338,6 +340,8 @@ export default function ReadPage() {
           chars={tts.chars}
           readingMinutes={tts.readingMinutes}
           volume={tts.volume}
+          disabled={listenDisabled}
+          disabledMessage={listenDisabled ? "Listen to articles is only available for English language" : undefined}
           onToggle={tts.onToggle}
           onVolumeChange={tts.onVolumeChange}
           onMuteToggle={tts.onMuteToggle}

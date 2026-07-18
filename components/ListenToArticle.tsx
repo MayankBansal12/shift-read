@@ -10,6 +10,7 @@ import {
   VolumeMuteIcon,
 } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import VolumeSlider from '@/components/ui/volume-slider'
 import type { TTSState } from '@/hooks/useArticleTTS'
 import { useEffect, useRef, useState } from 'react'
@@ -25,6 +26,7 @@ interface ListenToArticleProps {
   readingMinutes: number
   volume: number
   disabled?: boolean
+  disabledMessage?: string
   onToggle: () => void
   onVolumeChange: (v: number) => void
   onMuteToggle: () => void
@@ -54,6 +56,7 @@ export default function ListenToArticle({
   readingMinutes,
   volume,
   disabled = false,
+  disabledMessage,
   onToggle,
   onVolumeChange,
   onMuteToggle,
@@ -129,17 +132,36 @@ export default function ListenToArticle({
           <span>Nothing to read aloud.</span>
         )}
 
-        <Button
-          variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
-          size="lg"
-          onClick={onToggle}
-          disabled={transportDisabled}
-          aria-label={buttonAriaLabel(state)}
-          className="ml-auto"
-        >
-          <HugeiconsIcon icon={transportIcon} className="size-5" />
-          <span>{buttonText}</span>
-        </Button>
+        {disabledMessage ? (
+          <Tooltip>
+            <TooltipTrigger className="ml-auto">
+              <span tabIndex={0}>
+                <Button
+                  variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
+                  size="lg"
+                  disabled
+                  aria-label={buttonAriaLabel(state)}
+                >
+                  <HugeiconsIcon icon={transportIcon} className="size-5" />
+                  <span>{buttonText}</span>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{disabledMessage}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
+            size="lg"
+            onClick={onToggle}
+            disabled={transportDisabled}
+            aria-label={buttonAriaLabel(state)}
+            className="ml-auto"
+          >
+            <HugeiconsIcon icon={transportIcon} className="size-5" />
+            <span>{buttonText}</span>
+          </Button>
+        )}
 
         {isActive && (
           <div
