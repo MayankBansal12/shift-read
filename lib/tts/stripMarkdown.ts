@@ -1,6 +1,6 @@
 export class ArticleTooLongError extends Error {
   constructor(public readonly length: number) {
-    super(`Article is too long to listen to in one session (${length} chars)`)
+    super(`blog is too long to listen to in one session (${length} chars)`)
     this.name = 'ArticleTooLongError'
   }
 }

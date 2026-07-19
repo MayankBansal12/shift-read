@@ -33,11 +33,11 @@ interface ListenToArticleProps {
 }
 
 function buttonAriaLabel(state: TTSState): string {
-  if (state.kind === 'playing' || state.kind === 'buffering') return 'Pause listening to article'
-  if (state.kind === 'paused') return 'Resume listening to article'
-  if (state.kind === 'loading') return 'Loading article audio'
-  if (state.kind === 'error') return 'Retry loading article audio'
-  return 'Listen to this article'
+  if (state.kind === 'playing' || state.kind === 'buffering') return 'Pause listening to blog'
+  if (state.kind === 'paused') return 'Resume listening to blog'
+  if (state.kind === 'loading') return 'Loading blog audio'
+  if (state.kind === 'error') return 'Retry loading blog audio'
+  return 'Listen to this blog'
 }
 
 function volumeIcon(volume: number) {
@@ -115,7 +115,7 @@ export default function ListenToArticle({
 
   return (
     <section
-      aria-label="Listen to this article"
+      aria-label="listen to this blog"
       className="not-prose mb-8 rounded-lg border border-border py-2 px-3 text-sm text-muted-foreground"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 w-full">
@@ -131,7 +131,7 @@ export default function ListenToArticle({
           ~<strong className="text-foreground">{readingMinutes}</strong> min read
         </span>
         {tooLong && (
-          <span className="text-destructive">Article is too long to listen to in one session.</span>
+          <span className="text-destructive">blog is too long to listen to in one session.</span>
         )}
         {empty && !tooLong && (
           <span>Nothing to read aloud.</span>
@@ -139,7 +139,7 @@ export default function ListenToArticle({
 
         {disabledMessage ? (
           <Tooltip>
-            <TooltipTrigger className="ml-auto">
+            <TooltipTrigger render={<span />} className="ml-auto">
               <span tabIndex={0}>
                 <Button
                   variant={isPlayingOrBuffering || isLoading ? 'secondary' : 'default'}
@@ -148,7 +148,7 @@ export default function ListenToArticle({
                   aria-label={buttonAriaLabel(state)}
                 >
                   <HugeiconsIcon icon={transportIcon} className="size-5" />
-                  <span>{buttonText}</span>
+                  <span>{buttonText?.toLowerCase()}</span>
                 </Button>
               </span>
             </TooltipTrigger>
@@ -164,7 +164,7 @@ export default function ListenToArticle({
             className="ml-auto"
           >
             <HugeiconsIcon icon={transportIcon} className="size-5" />
-            <span>{buttonText}</span>
+            <span>{buttonText?.toLowerCase()}</span>
           </Button>
         )}
 

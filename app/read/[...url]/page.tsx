@@ -15,6 +15,8 @@ import { reconstructUrl } from '@/lib/utils'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { Spinner } from '@/components/ui/spinner'
+import { AnimateLoader } from '@/components/ui/animate-loader'
 
 export default function ReadPage() {
   const params = useParams()
@@ -97,7 +99,7 @@ export default function ReadPage() {
           return
         }
 
-        setCleanupStatus('Fetching article...')
+        setCleanupStatus('Extracting the content...')
         const scrapeResult = await fetchContent(decodedUrl)
 
         if (cancelled) return
@@ -107,7 +109,7 @@ export default function ReadPage() {
           return
         }
 
-        setCleanupStatus('Cleaning up content...')
+        setCleanupStatus('formatting it nicely...')
         const cleanResult = await cleanMarkdown(
           scrapeResult.data.markdown,
           scrapeResult.data.metadata
@@ -204,8 +206,8 @@ export default function ReadPage() {
       <div className="min-h-screen flex flex-col">
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity">
-              Shift
+            <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">
+              shift.
             </Link>
             <ThemeToggle />
           </div>
@@ -213,8 +215,8 @@ export default function ReadPage() {
 
         <main className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">{cleanupStatus || 'Loading article...'}</p>
+            <AnimateLoader />
+            <p className="text-muted-foreground">{cleanupStatus?.toLowerCase() || 'loading the blog...'}</p>
           </div>
         </main>
       </div>
@@ -226,8 +228,8 @@ export default function ReadPage() {
       <div className="min-h-screen flex flex-col">
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity">
-              Shift
+            <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">
+              shift.
             </Link>
             <ThemeToggle />
           </div>
@@ -238,9 +240,9 @@ export default function ReadPage() {
             <p className="text-destructive text-lg">{error}</p>
             <div className="flex gap-4 justify-center">
               <Button onClick={() => router.push('/')} variant="outline">
-                Go Home
+                home
               </Button>
-              <Button onClick={() => window.location.reload()}>Retry</Button>
+              <Button onClick={() => window.location.reload()}>retry</Button>
             </div>
           </div>
         </main>
@@ -256,8 +258,8 @@ export default function ReadPage() {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity">
-            Shift
+          <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">
+            shift.
           </Link>
           <div className="flex items-center gap-4">
             {translatedContent && (
@@ -266,14 +268,14 @@ export default function ReadPage() {
                 size="sm"
                 onClick={() => setShowOriginal(!showOriginal)}
               >
-                {showOriginal ? 'Recent Translation' : 'Show Original'}
+                {showOriginal ? 'recent translation' : 'show original'}
               </Button>
             )}
 
             {translating ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <span>Translating...</span>
+                <Spinner />
+                <span>translating...</span>
               </div>
             ) : (
               <LanguageSelector
@@ -312,7 +314,7 @@ export default function ReadPage() {
           readingMinutes={tts.readingMinutes}
           volume={tts.volume}
           disabled={listenDisabled}
-          disabledMessage={listenDisabled ? "Listen to articles is only available for English language" : undefined}
+          disabledMessage={listenDisabled ? "listen to blog is only available for english" : undefined}
           onToggle={tts.onToggle}
           onVolumeChange={tts.onVolumeChange}
           onMuteToggle={tts.onMuteToggle}
