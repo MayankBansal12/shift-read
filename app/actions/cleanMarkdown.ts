@@ -16,6 +16,7 @@ const CleanupResponseSchema = z.object({
   isComplete: z.boolean().describe('Whether the cleanup was successful and content is readable'),
   metadata: z.object({
     title: z.string().nullable().optional().describe('Extracted article title'),
+    subheading: z.string().nullable().optional().describe('Extracted article subheading/subtitle'),
     author: z.string().nullable().optional().describe('Extracted author name'),
     publishedTime: z.string().nullable().optional().describe('Publication date in ISO 8601 format'),
     ogImage: z.string().nullable().optional().describe('Featured image URL from markdown or fallback to firecrawl metadata')
@@ -26,6 +27,7 @@ export interface CleanedArticle {
   markdown: string
   metadata: {
     title?: string
+    subheading?: string
     author?: string
     publishedTime?: string
     ogImage?: string
@@ -90,6 +92,7 @@ export async function cleanMarkdown(
         markdown: cleaned.content,
         metadata: {
           title: cleaned.metadata?.title || metadata?.title,
+          subheading: cleaned.metadata?.subheading || metadata?.subheading,
           author: cleaned.metadata?.author || metadata?.author,
           publishedTime: cleaned.metadata?.publishedTime || metadata?.publishedTime,
           ogImage: cleaned.metadata?.ogImage || metadata?.ogImage,

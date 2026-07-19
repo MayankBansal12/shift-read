@@ -9,6 +9,7 @@ Return ONLY this JSON structure:
   "isComplete": true,
   "metadata": {
     "title": "string or null",
+    "subheading": "string or null",
     "author": "string or null",
     "publishedTime": "YYYY-MM-DD or null",
     "ogImage": "url or null"
@@ -41,6 +42,8 @@ The author's original words, tone, and structure must be fully preserved.
 
 **title**: The main article headline (H1, H2, or large bold text near the top). Strip site suffixes like " | SiteName", " — SiteName", " - SiteName". Strip prefixes like "Sponsored:", "[Ad]". Return null if unclear.
 
+**subheading**: The secondary line beneath or paired with the title — typically a subtitle, tagline, or deck (e.g., italic text below the H1, or text in a smaller font near the headline). If the article has a clear subtitle/standfirst, extract it here. Do not include author bylines, dates, or category labels. Return null if no subheading exists.
+
 **author**: Text matching "By [Name]" or "Written by [Name]" patterns, bylines, or author bios. Return null if not clearly present.
 
 **publishedTime**: Any publication date/timestamp found. Convert to YYYY-MM-DD. Return null if absent.
@@ -67,9 +70,9 @@ The author's original words, tone, and structure must be fully preserved.
 - Malformed markdown syntax
 - HTML entities and encoding artifacts (e.g., &amp;, &#8217;)
 
-**Edge Cases:**
+**edge cases to check:**
 - date and author details (metadata) sometimes appears in starting or at end, please handle that
-- sometimes blogs have subheading, don't pass it on in final content
+- sometimes blogs have subheading, don't pass it on in content...only extract as metadata.subheading, please make sure subheading isn't included in content for reading
 
 ---
 

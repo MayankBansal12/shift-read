@@ -6,6 +6,7 @@ export interface ArticleData {
   markdown: string
   metadata: {
     title?: string
+    subheading?: string
     author?: string
     publishedTime?: string
     ogImage?: string
@@ -46,6 +47,7 @@ export async function fetchContent(url: string): Promise<{
         markdown: result.markdown,
         metadata: {
           title: result.metadata?.title,
+          subheading: (result.metadata as Record<string, unknown>)?.subheading as string | undefined,
           author: (result.metadata as Record<string, unknown>)?.author as string | undefined,
           publishedTime: result.metadata?.publishedTime,
           ogImage: result.metadata?.ogImage,

@@ -81,6 +81,7 @@ export default function ReadPage() {
             markdown: cached.article.content,
             metadata: {
               title: cached.article.title,
+              subheading: cached.article.subheading,
               author: cached.article.author,
               publishedTime: cached.article.date,
               ogImage: cached.article.image,
@@ -131,6 +132,7 @@ export default function ReadPage() {
           article: {
             content: finalArticle.markdown,
             title: finalArticle.metadata.title,
+            subheading: finalArticle.metadata.subheading,
             author: finalArticle.metadata.author,
             date: finalArticle.metadata.publishedTime,
             image: finalArticle.metadata.ogImage,
@@ -180,6 +182,7 @@ export default function ReadPage() {
         article: {
           content: article.markdown,
           title: article.metadata.title,
+          subheading: article.metadata.subheading,
           author: article.metadata.author,
           date: article.metadata.publishedTime,
           image: article.metadata.ogImage,
@@ -292,6 +295,7 @@ export default function ReadPage() {
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 w-full">
         <ArticleHeader
           title={article.metadata.title}
+          subheading={article.metadata.subheading}
           author={article.metadata.author}
           date={article.metadata.publishedTime}
           image={article.metadata.ogImage}

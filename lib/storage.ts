@@ -2,6 +2,7 @@ export interface StoredArticle {
   article: {
     content: string
     title?: string
+    subheading?: string
     author?: string
     date?: string
     image?: string
