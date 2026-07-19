@@ -99,8 +99,8 @@ export default function Home() {
                             priority
                         />
                     </div>
-                    <p className="text-muted-foreground">
-                        read any blog on the internet in your own language
+                    <p className="text-lg text-muted-foreground">
+                        read any blog on the internet in your language.
                     </p>
                 </div>
 
@@ -116,7 +116,7 @@ export default function Home() {
                                 }}
                             />
                             <InputGroupAddon align="inline-end">
-                                <InputGroupButton type="submit">
+                                <InputGroupButton type="submit" disabled={!url.trim()}>
                                     read
                                 </InputGroupButton>
                             </InputGroupAddon>
@@ -126,7 +126,7 @@ export default function Home() {
                         />
                     </Field>
 
-                    <p className="text-sm text-muted-foreground my-4">
+                    <p className="text-sm text-muted-foreground/80 my-4">
                         you can append
                         <Tooltip>
                             <TooltipTrigger closeOnClick={false}>
@@ -152,7 +152,7 @@ export default function Home() {
                                 )}
                             </TooltipContent>
                         </Tooltip>
-                        in front of any url to use shift
+                        in front of any blog to use shift
                     </p>
                 </form>
             </main>
