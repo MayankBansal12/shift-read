@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { TranslateIcon } from '@hugeicons/core-free-icons'
 import { SUPPORTED_LANGUAGES, REGIONS, getLanguageByCode, type Language } from '@/lib/languages'
 
 interface LanguageSelectorProps {
@@ -98,6 +100,7 @@ export default function LanguageSelector({
         disabled={disabled}
         className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
+        <HugeiconsIcon icon={TranslateIcon} className="size-4" />
         <span>{getSelectedDisplayText()}</span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}

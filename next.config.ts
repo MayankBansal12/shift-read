@@ -9,11 +9,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '30mb',
-    },
-  },
   async rewrites() {
     return [
       {
