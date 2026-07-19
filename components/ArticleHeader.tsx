@@ -21,7 +21,7 @@ export default function ArticleHeader({
         <div className="relative w-full h-64 sm:h-96 mb-6 rounded-xl overflow-hidden">
           <Image
             src={image}
-            alt={title || 'Article'}
+            alt={title || 'blog'}
             fill
             className="object-cover"
             priority
