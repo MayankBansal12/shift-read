@@ -9,7 +9,7 @@ import ListenToArticle from '@/components/ListenToArticle'
 import { MDXRender } from '@/components/MDXRender'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
-import { getFromPdfSession, getFromStorage, isPdfToken, pdfIdFromToken, savePdfToSession, saveToStorage } from '@/lib/storage'
+import { getFromStorage, saveToStorage } from '@/lib/storage'
 import { useArticleTTS } from '@/hooks/useArticleTTS'
 import { reconstructUrl } from '@/lib/utils'
 import Link from 'next/link'
@@ -30,8 +30,6 @@ export default function ReadPage() {
   const [translating, setTranslating] = useState(false)
   const [translateError, setTranslateError] = useState<string | null>(null)
   const [showOriginal, setShowOriginal] = useState(true)
-  const [pdfId, setPdfId] = useState<string | null>(null)
-  const [pdfImages, setPdfImages] = useState<string[]>([])
 
   const listenText = showOriginal
     ? (article?.markdown ?? '')
@@ -40,6 +38,10 @@ export default function ReadPage() {
   const listenDisabled = !!(translatedContent && !showOriginal)
 
   const tts = useArticleTTS({ text: listenText, disabled: loading || !article })
+
+  const displayedLanguage = showOriginal
+    ? (article?.metadata.language ?? null)
+    : selectedLanguage
 
   useEffect(() => {
     let cancelled = false
@@ -65,34 +67,6 @@ export default function ReadPage() {
         setSelectedLanguage(null)
         setShowOriginal(true)
 
-        if (isPdfToken(token)) {
-          const id = pdfIdFromToken(token)
-          setPdfId(id)
-          const sessionArticle = getFromPdfSession(id)
-          if (!sessionArticle) {
-            setError('This PDF is no longer available. Please re-upload from home.')
-            return
-          }
-          setArticle({
-            markdown: sessionArticle.article.content,
-            metadata: {
-              title: sessionArticle.article.title,
-              author: sessionArticle.article.author,
-              publishedTime: sessionArticle.article.date
-            }
-          })
-          setPdfImages(sessionArticle.article.images ?? [])
-          if (sessionArticle.translation) {
-            setTranslatedContent(sessionArticle.translation.content)
-            setSelectedLanguage(sessionArticle.translation.language)
-            setShowOriginal(false)
-          }
-          setLoading(false)
-          return
-        }
-        setPdfId(null)
-        setPdfImages([])
-
         const decodedUrl = reconstructUrl(seg as string | string[])
         if (!decodedUrl.startsWith('https://') && !decodedUrl.startsWith('http://')) {
           setError('Invalid URL. Please go back and enter a valid article URL.')
@@ -102,10 +76,12 @@ export default function ReadPage() {
 
         const cached = getFromStorage(decodedUrl)
         if (cached) {
+          console.log('[ReadPage] Loaded article from cache for:', decodedUrl)
           setArticle({
             markdown: cached.article.content,
             metadata: {
               title: cached.article.title,
+              subheading: cached.article.subheading,
               author: cached.article.author,
               publishedTime: cached.article.date,
               ogImage: cached.article.image,
@@ -156,6 +132,7 @@ export default function ReadPage() {
           article: {
             content: finalArticle.markdown,
             title: finalArticle.metadata.title,
+            subheading: finalArticle.metadata.subheading,
             author: finalArticle.metadata.author,
             date: finalArticle.metadata.publishedTime,
             image: finalArticle.metadata.ogImage,
@@ -201,27 +178,19 @@ export default function ReadPage() {
       setShowOriginal(false)
       setSelectedLanguage(language)
 
-      const articleRecord = {
+      saveToStorage(decodedUrlRef.current, {
         article: {
           content: article.markdown,
           title: article.metadata.title,
+          subheading: article.metadata.subheading,
           author: article.metadata.author,
           date: article.metadata.publishedTime,
-          images: pdfImages,
+          image: article.metadata.ogImage,
           sourceLanguage: article.metadata.language
         },
         translation: { content: result.data, language },
         timestamp: Date.now()
-      }
-
-      if (pdfId) {
-        savePdfToSession(pdfId, articleRecord)
-      } else {
-        saveToStorage(decodedUrlRef.current, {
-          ...articleRecord,
-          article: { ...articleRecord.article, image: article.metadata.ogImage }
-        })
-      }
+      })
     } else {
       setTranslateError(result.error || 'Translation failed')
       setShowOriginal(true)
@@ -291,6 +260,16 @@ export default function ReadPage() {
             Shift
           </Link>
           <div className="flex items-center gap-4">
+            {translatedContent && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowOriginal(!showOriginal)}
+              >
+                {showOriginal ? 'Recent Translation' : 'Show Original'}
+              </Button>
+            )}
+
             {translating ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -299,19 +278,10 @@ export default function ReadPage() {
             ) : (
               <LanguageSelector
                 sourceLanguage={article.metadata.language}
-                selectedLanguage={selectedLanguage}
+                selectedLanguage={displayedLanguage}
                 onLanguageChange={handleLanguageChange}
                 disabled={loading}
               />
-            )}
-
-            {translatedContent && (
-              <button
-                onClick={() => setShowOriginal(!showOriginal)}
-                className="px-3 py-1.5 text-sm border rounded-md hover:bg-muted transition-colors"
-              >
-                {showOriginal ? 'Recent Translation' : 'Show Original'}
-              </button>
             )}
             {translateError && (
               <span className="text-xs text-destructive">{translateError}</span>
@@ -325,6 +295,7 @@ export default function ReadPage() {
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 w-full">
         <ArticleHeader
           title={article.metadata.title}
+          subheading={article.metadata.subheading}
           author={article.metadata.author}
           date={article.metadata.publishedTime}
           image={article.metadata.ogImage}
@@ -348,13 +319,9 @@ export default function ReadPage() {
         />
 
         <div className="prose prose-sm dark:prose-invert max-w-none cursor-text transition-all">
-          <MDXRender content={(pdfImages.length
-            ? (showOriginal ? article.markdown : translatedContent || '').replace(/\[img:(\d+)\]/g, (_, i) => {
-                const url = pdfImages[Number(i)]
-                return url ? `![image](${url})` : ''
-              })
-            : showOriginal ? article.markdown : translatedContent || ''
-          )} />
+          <MDXRender content={
+            showOriginal ? article.markdown : translatedContent || ''
+          } />
         </div>
       </main>
     </div>

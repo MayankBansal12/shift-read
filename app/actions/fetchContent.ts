@@ -6,6 +6,7 @@ export interface ArticleData {
   markdown: string
   metadata: {
     title?: string
+    subheading?: string
     author?: string
     publishedTime?: string
     ogImage?: string
@@ -27,6 +28,7 @@ export async function fetchContent(url: string): Promise<{
 
     const firecrawl = new Firecrawl({ apiKey })
 
+    console.log('[fetchContent] Firecrawl API called for:', url)
     const result = await firecrawl.scrape(url, {
       formats: ['markdown'],
       onlyMainContent: true,
@@ -34,15 +36,18 @@ export async function fetchContent(url: string): Promise<{
     })
 
     if (!result.markdown) {
+      console.warn('[fetchContent] Firecrawl returned no markdown for:', url)
       return { success: false, error: 'Failed to extract article content' }
     }
 
+    console.log('[fetchContent] Firecrawl succeeded, markdown length:', result.markdown.length, 'chars')
     return {
       success: true,
       data: {
         markdown: result.markdown,
         metadata: {
           title: result.metadata?.title,
+          subheading: (result.metadata as Record<string, unknown>)?.subheading as string | undefined,
           author: (result.metadata as Record<string, unknown>)?.author as string | undefined,
           publishedTime: result.metadata?.publishedTime,
           ogImage: result.metadata?.ogImage,

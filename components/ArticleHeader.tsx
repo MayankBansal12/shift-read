@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 interface ArticleHeaderProps {
   title?: string
+  subheading?: string
   author?: string
   date?: string
   image?: string
@@ -9,6 +10,7 @@ interface ArticleHeaderProps {
 
 export default function ArticleHeader({
   title,
+  subheading,
   author,
   date,
   image,
@@ -28,7 +30,10 @@ export default function ArticleHeader({
         </div>
       )}
       {title && (
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4">{title}</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-4">{title}</h1>
+      )}
+      {subheading && (
+        <p className="text-lg text-muted-foreground my-2">{subheading}</p>
       )}
       {(author || date) && (
         <div className="flex items-center gap-4 text-muted-foreground text-sm">

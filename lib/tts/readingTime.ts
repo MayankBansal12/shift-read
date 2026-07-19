@@ -1,13 +1,15 @@
-const WPM = 230
+const WPM = 200
 
 export function wordCount(text: string): number {
   if (!text) return 0
-  return text.trim().split(/\s+/).filter(Boolean).length
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' })
+  return [...segmenter.segment(text)].filter(s => s.isWordLike).length
 }
 
 export function charCount(text: string): number {
   if (!text) return 0
-  return text.length
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+  return [...segmenter.segment(text)].length
 }
 
 export function readingTimeMin(text: string): number {

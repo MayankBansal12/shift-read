@@ -2,10 +2,10 @@ export interface StoredArticle {
   article: {
     content: string
     title?: string
+    subheading?: string
     author?: string
     date?: string
     image?: string
-    images?: string[]
     sourceLanguage?: string
   }
   translation?: {
@@ -58,38 +58,6 @@ export function clearFromStorage(url: string): void {
   try {
     const key = getStorageKey(url)
     localStorage.removeItem(key)
-  } catch {
-  }
-}
-
-export function isPdfToken(token: string): boolean {
-  return token.startsWith('pdf-')
-}
-
-export function pdfIdFromToken(token: string): string {
-  return token.slice('pdf-'.length)
-}
-
-function getPdfKey(id: string): string {
-  return `shift_pdf_${id}`
-}
-
-export function getFromPdfSession(id: string): StoredArticle | null {
-  if (typeof window === 'undefined') return null
-
-  try {
-    const item = sessionStorage.getItem(getPdfKey(id))
-    return item ? (JSON.parse(item) as StoredArticle) : null
-  } catch {
-    return null
-  }
-}
-
-export function savePdfToSession(id: string, data: StoredArticle): void {
-  if (typeof window === 'undefined') return
-
-  try {
-    sessionStorage.setItem(getPdfKey(id), JSON.stringify(data))
   } catch {
   }
 }

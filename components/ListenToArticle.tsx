@@ -53,6 +53,7 @@ export default function ListenToArticle({
   tooLong,
   empty,
   words,
+  chars,
   readingMinutes,
   volume,
   disabled = false,
@@ -120,6 +121,10 @@ export default function ListenToArticle({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 w-full">
         <span>
           <strong className="text-foreground">{words.toLocaleString()}</strong> words
+        </span>
+        <span aria-hidden className="font-bold">·</span>
+        <span>
+          <strong className="text-foreground">{chars.toLocaleString()}</strong> chars
         </span>
         <span aria-hidden className="font-bold">·</span>
         <span>

@@ -5,6 +5,7 @@ import { synthesizeSpeech } from '@/app/actions/tts'
 import { ArticleTooLongError, chunkText } from '@/lib/tts/chunker'
 import { charCount, readingTimeMin, wordCount } from '@/lib/tts/readingTime'
 import { PREFETCH_LEAD_S, VOICE } from '@/lib/tts/constants'
+import { stripMarkdown } from '@/lib/tts/stripMarkdown'
 
 function friendlyErrorMessage(raw: string): string {
   if (raw.includes('timed out')) return 'Speech generation took too long. Try again.'
@@ -174,9 +175,11 @@ export function useArticleTTS({ text, disabled = false }: UseArticleTTSOptions):
   const tooLong = !!chunkInfo.error
   const empty = chunks.length === 0 && !tooLong
 
-  const words = useMemo(() => wordCount(text), [text])
-  const chars = useMemo(() => charCount(text), [text])
-  const readingMinutes = useMemo(() => readingTimeMin(text), [text])
+  const plainText = useMemo(() => stripMarkdown(text), [text])
+
+  const words = useMemo(() => wordCount(plainText), [plainText])
+  const chars = useMemo(() => charCount(plainText), [plainText])
+  const readingMinutes = useMemo(() => readingTimeMin(plainText), [plainText])
 
   const cleanupCurrentUrl = useCallback(() => {
     if (currentUrlRef.current) {
