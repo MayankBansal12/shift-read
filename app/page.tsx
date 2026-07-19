@@ -1,21 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Field, FieldError } from "@/components/ui/field"
+import { Field, FieldError } from "@/components/ui/field";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group"
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
 import ThemeToggle from "@/components/ThemeToggle";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Kbd } from "@/components/ui/kbd";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CheckmarkBadge01Icon } from "@hugeicons/core-free-icons";
 
 export default function Home() {
     const [url, setUrl] = useState("");
     const [error, setError] = useState("");
     const router = useRouter();
+    const [isCopied, setIsCopied] = useState(false);
+
+    const clientUrl = `${process.env.NEXT_PUBLIC_CLIENT_URL}/`;
+
+    const handleCopyClientUrl = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(clientUrl);
+            setIsCopied(true);
+        } catch {
+            console.error("unable to copy to clipboard!");
+        } finally {
+            setTimeout(() => setIsCopied(false), 2000);
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "b" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleCopyClientUrl();
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [handleCopyClientUrl]);
 
     const normalize = (raw: string) => {
         const trimmed = raw.trim();
@@ -28,7 +61,7 @@ export default function Home() {
     const handleSubmitUrl = (e: React.FormEvent) => {
         e.preventDefault();
         if (!url.trim()) {
-            setError("Please enter a URL");
+            setError("please enter a URL");
             return;
         }
 
@@ -37,11 +70,11 @@ export default function Home() {
         try {
             const parsed = new URL(normalized);
             if (!["http:", "https:"].includes(parsed.protocol)) {
-                setError("Only http and https URLs are supported");
+                setError("only http and https URLs are supported");
                 return;
             }
         } catch {
-            setError("Please enter a valid URL (e.g. https://example.com)");
+            setError("please enter a valid URL (e.g. https://example.com)");
             return;
         }
 
@@ -72,28 +105,53 @@ export default function Home() {
                 </div>
 
                 <form onSubmit={handleSubmitUrl} className="w-full">
-                  <Field>
-                    <InputGroup>
-                      <InputGroupInput
-                        placeholder="Enter the blog url you wanna read..."
-                        value={url}
-                        onChange={(e) => {
-                          setUrl(e.target.value);
-                          setError("");
-                        }}
-                      />
-                      <InputGroupAddon align="inline-end">
-                        <InputGroupButton type="submit">Read</InputGroupButton>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    <FieldError errors={error ? [{ message: error }] : undefined} />
+                    <Field>
+                        <InputGroup>
+                            <InputGroupInput
+                                placeholder="enter the blog url you wanna read..."
+                                value={url}
+                                onChange={(e) => {
+                                    setUrl(e.target.value);
+                                    setError("");
+                                }}
+                            />
+                            <InputGroupAddon align="inline-end">
+                                <InputGroupButton type="submit">
+                                    read
+                                </InputGroupButton>
+                            </InputGroupAddon>
+                        </InputGroup>
+                        <FieldError
+                            errors={error ? [{ message: error }] : undefined}
+                        />
                     </Field>
 
                     <p className="text-sm text-muted-foreground my-4">
                         you can append
-                        <span className="px-1 font-semibold text-primary">
-                            {process.env.NEXT_PUBLIC_CLIENT_URL}/
-                        </span>
+                        <Tooltip>
+                            <TooltipTrigger closeOnClick={false}>
+                                <span
+                                    className="px-1 font-semibold text-primary inline-flex items-center gap-1"
+                                    onClick={handleCopyClientUrl}
+                                >
+                                    {clientUrl}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="pr-1.5">
+                                {isCopied ? (
+                                    <span className="inline-flex items-center gap-1">
+                                        <HugeiconsIcon icon={CheckmarkBadge01Icon} size={14} />
+                                        copied!
+                                    </span>
+                                ) : (
+                                    <span>
+                                        click or press <Kbd className="text-xs font-normal">
+                                            ⌘+B
+                                        </Kbd> to copy
+                                    </span>
+                                )}
+                            </TooltipContent>
+                        </Tooltip>
                         in front of any url to use shift
                     </p>
                 </form>
