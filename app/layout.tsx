@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Shift to Read",
-  description: "Read any blog on the internet in your preferred language | Append shft.page/ before any url to redirect to the site",
+  title: "Shift to Read | Append shft.page/ before any url to redirect here for reading",
+  description: "Read any blog on the internet in your preferred language",
 };
 
 export default function RootLayout({
