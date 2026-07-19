@@ -12,6 +12,7 @@ export async function translateMarkdown(
       apiKey: process.env.JIGSAW_STACK_KEY || ''
     })
 
+    console.log('[translateMarkdown] Translating from', sourceLanguage || 'auto', 'to', targetLanguage, '| chars:', markdown.length)
     const result = await jigsaw.translate.text({
       text: markdown,
       target_language: targetLanguage,
@@ -19,12 +20,14 @@ export async function translateMarkdown(
     } as Parameters<typeof jigsaw.translate.text>[0])
 
     if (!result.success) {
+      console.warn('[translateMarkdown] Translation failed, result:', JSON.stringify(result))
       return {
         success: false,
         error: 'Failed to translate content'
       }
     }
 
+    console.log('[translateMarkdown] Translation succeeded, translated text length:', (result.translated_text as string)?.length, 'chars')
     return {
       success: true,
       data: result.translated_text as string

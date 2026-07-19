@@ -76,6 +76,7 @@ export default function ReadPage() {
 
         const cached = getFromStorage(decodedUrl)
         if (cached) {
+          console.log('[ReadPage] Loaded article from cache for:', decodedUrl)
           setArticle({
             markdown: cached.article.content,
             metadata: {

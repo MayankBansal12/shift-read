@@ -27,6 +27,7 @@ export async function fetchContent(url: string): Promise<{
 
     const firecrawl = new Firecrawl({ apiKey })
 
+    console.log('[fetchContent] Firecrawl API called for:', url)
     const result = await firecrawl.scrape(url, {
       formats: ['markdown'],
       onlyMainContent: true,
@@ -34,9 +35,11 @@ export async function fetchContent(url: string): Promise<{
     })
 
     if (!result.markdown) {
+      console.warn('[fetchContent] Firecrawl returned no markdown for:', url)
       return { success: false, error: 'Failed to extract article content' }
     }
 
+    console.log('[fetchContent] Firecrawl succeeded, markdown length:', result.markdown.length, 'chars')
     return {
       success: true,
       data: {

@@ -1,13 +1,13 @@
 'use server'
 
 import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createAnthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 import { CLEANUP_SYSTEM_PROMPT } from '@/lib/system-prompt'
 
-const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY
+const opencode = createAnthropic({
+  baseURL: process.env.OPENCODE_BASE_URL!,
+  apiKey: process.env.OPENCODE_API_KEY
 })
 
 const CleanupResponseSchema = z.object({
@@ -38,13 +38,11 @@ export async function cleanMarkdown(
   metadata?: Record<string, string | undefined>
 ): Promise<{ success: boolean; data?: CleanedArticle; error?: string }> {
   try {
+    console.log('[cleanMarkdown] Starting cleanup, raw markdown length:', rawMarkdown.length, 'chars')
     const { text } = await generateText({
-      model: groq(`${process.env.GROQ_MODEL}`),
+      model: opencode(`${process.env.OPENCODE_MODEL!}`),
+      instructions: CLEANUP_SYSTEM_PROMPT,
       messages: [
-        {
-          role: 'system',
-          content: CLEANUP_SYSTEM_PROMPT
-        },
         {
           role: 'user',
           content: `Clean the following scraped content. Extract metadata (title, author, date, image) and return only the main article body, excluding any title, featured image, ads, navigation, or related content.\n\n=== FIRECRAWL METADATA (FOR CONTEXT) ===\n${JSON.stringify(metadata || {}, null, 2)}\n\n=== CONTENT START ===\n${rawMarkdown}\n=== CONTENT END ===`
@@ -78,12 +76,14 @@ export async function cleanMarkdown(
     const cleaned = CleanupResponseSchema.parse(parsedJson)
 
     if (!cleaned.isComplete || !cleaned.content.trim()) {
+      console.warn('[cleanMarkdown] Cleanup incomplete or empty content')
       return {
         success: false,
         error: 'Could not extract meaningful content from the article'
       }
     }
 
+    console.log('[cleanMarkdown] Cleanup succeeded, cleaned markdown length:', cleaned.content.length, 'chars')
     return {
       success: true,
       data: {

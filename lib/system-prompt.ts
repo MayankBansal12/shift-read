@@ -67,6 +67,10 @@ The author's original words, tone, and structure must be fully preserved.
 - Malformed markdown syntax
 - HTML entities and encoding artifacts (e.g., &amp;, &#8217;)
 
+**Edge Cases:**
+- date and author details (metadata) sometimes appears in starting or at end, please handle that
+- sometimes blogs have subheading, don't pass it on in final content
+
 ---
 
 ## STEP 3 — FORMAT THE CONTENT

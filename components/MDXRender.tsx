@@ -6,6 +6,8 @@ import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 import Image from "next/image";
 
+import { useMemo } from "react";
+
 const YOUTUBE_DOMAINS = ["youtube.com", "youtu.be"];
 
 function isYouTubeUrl(url: string): string | null {
@@ -55,6 +57,10 @@ interface MDXRenderProps {
 }
 
 export function MDXRender({ content, className = "" }: MDXRenderProps) {
+  useMemo(() => {
+    console.log('[MDXRender] Rendering markdown content, length:', content.length, 'chars')
+  }, [content])
+
   return (
     <div
       className={`mdx-content text-foreground ${className}`}
