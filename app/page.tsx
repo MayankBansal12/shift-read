@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -36,7 +37,15 @@ export default function Home() {
 
       <main className="max-w-lg flex flex-col gap-8 items-center justify-center p-4">
         <div className="w-full space-y-4 text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Shift and Read</h1>
+          <div className="h-24 flex items-center justify-center">
+            <Image
+              src="/shift-logo.png"
+              alt="Shift"
+              width={200}
+              height={48}
+              priority
+            />
+          </div>
           <p className="text-xl text-muted-foreground">
             Read any blog in your language
           </p>
