@@ -1,6 +1,7 @@
 'use server'
 
 import { JigsawStack } from 'jigsawstack'
+import { chunkContent, CONTENT_CHUNK_SIZE } from '@/lib/content-chunker'
 
 export async function translateMarkdown(
   markdown: string,
@@ -12,26 +13,41 @@ export async function translateMarkdown(
       apiKey: process.env.JIGSAW_STACK_KEY || ''
     })
 
-    console.log('[translateMarkdown] Translating from', sourceLanguage || 'auto', 'to', targetLanguage, '| chars:', markdown.length)
-    const result = await jigsaw.translate.text({
-      text: markdown,
-      target_language: targetLanguage,
-      ...(sourceLanguage ? { current_language: sourceLanguage } : {})
-    } as Parameters<typeof jigsaw.translate.text>[0])
+    const translateText = async (text: string): Promise<string> => {
+      console.log('[translateMarkdown] Translating chunk from', sourceLanguage || 'auto', 'to', targetLanguage, '| chars:', text.length)
+      const result = await jigsaw.translate.text({
+        text,
+        target_language: targetLanguage,
+        ...(sourceLanguage ? { current_language: sourceLanguage } : {})
+      } as Parameters<typeof jigsaw.translate.text>[0])
 
-    if (!result.success) {
-      console.warn('[translateMarkdown] Translation failed, result:', JSON.stringify(result))
-      return {
-        success: false,
-        error: 'Failed to translate content'
+      if (!result.success) {
+        throw new Error('Translation failed')
       }
+
+      return result.translated_text as string
     }
 
-    console.log('[translateMarkdown] Translation succeeded, translated text length:', (result.translated_text as string)?.length, 'chars')
-    return {
-      success: true,
-      data: result.translated_text as string
+    if (markdown.length <= CONTENT_CHUNK_SIZE) {
+      const translated = await translateText(markdown)
+      console.log('[translateMarkdown] Single-chunk translation succeeded, length:', translated.length)
+      return { success: true, data: translated }
     }
+
+    console.log('[translateMarkdown] Content too large, chunking. Total chars:', markdown.length)
+    const chunks = chunkContent(markdown, CONTENT_CHUNK_SIZE)
+    console.log('[translateMarkdown] Split into', chunks.length, 'chunks')
+
+    const translatedParts: string[] = []
+    for (let i = 0; i < chunks.length; i++) {
+      console.log('[translateMarkdown] Translating chunk', i + 1, 'of', chunks.length)
+      const translated = await translateText(chunks[i].text)
+      translatedParts.push(translated)
+    }
+
+    const finalText = translatedParts.join('\n\n')
+    console.log('[translateMarkdown] Multi-chunk translation succeeded, total length:', finalText.length)
+    return { success: true, data: finalText }
   } catch (error) {
     console.error('Translation error:', error)
     return {

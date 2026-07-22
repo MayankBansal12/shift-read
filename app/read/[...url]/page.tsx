@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { getFromStorage, saveToStorage } from '@/lib/storage'
 import { useArticleTTS } from '@/hooks/useArticleTTS'
 import { reconstructUrl } from '@/lib/utils'
+import { chunkContent, type ContentChunk } from '@/lib/content-chunker'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -32,6 +33,9 @@ export default function ReadPage() {
   const [translating, setTranslating] = useState(false)
   const [translateError, setTranslateError] = useState<string | null>(null)
   const [showOriginal, setShowOriginal] = useState(true)
+  const [contentChunks, setContentChunks] = useState<ContentChunk[]>([])
+  const [translatedChunks, setTranslatedChunks] = useState<ContentChunk[]>([])
+  const [visibleChunkCount, setVisibleChunkCount] = useState(1)
 
   const listenText = showOriginal
     ? (article?.markdown ?? '')
@@ -66,8 +70,10 @@ export default function ReadPage() {
         setCleanupStatus('')
         setError(null)
         setTranslatedContent(null)
+        setTranslatedChunks([])
         setSelectedLanguage(null)
         setShowOriginal(true)
+        setVisibleChunkCount(1)
 
         const decodedUrl = reconstructUrl(seg as string | string[])
         if (!decodedUrl.startsWith('https://') && !decodedUrl.startsWith('http://')) {
@@ -90,8 +96,10 @@ export default function ReadPage() {
               language: cached.article.sourceLanguage
             }
           })
+          setContentChunks(chunkContent(cached.article.content))
           if (cached.translation) {
             setTranslatedContent(cached.translation.content)
+            setTranslatedChunks(chunkContent(cached.translation.content))
             setSelectedLanguage(cached.translation.language)
             setShowOriginal(false)
           }
@@ -130,6 +138,7 @@ export default function ReadPage() {
         }
 
         setArticle(finalArticle)
+        setContentChunks(chunkContent(finalArticle.markdown))
         saveToStorage(decodedUrl, {
           article: {
             content: finalArticle.markdown,
@@ -177,6 +186,7 @@ export default function ReadPage() {
 
     if (result.success && result.data) {
       setTranslatedContent(result.data)
+      setTranslatedChunks(chunkContent(result.data))
       setShowOriginal(false)
       setSelectedLanguage(language)
 
@@ -199,6 +209,23 @@ export default function ReadPage() {
     }
 
     setTranslating(false)
+  }
+
+  const activeChunks = showOriginal ? contentChunks : translatedChunks
+  const clampedCount = Math.min(visibleChunkCount, activeChunks.length)
+  const displayContent = activeChunks.slice(0, clampedCount).map(c => c.text).join('\n\n')
+  const hasMore = clampedCount < activeChunks.length
+  const remainingChars = activeChunks.slice(clampedCount).reduce((sum, c) => sum + c.text.length, 0)
+
+  function handleReadMore() {
+    setVisibleChunkCount(prev => prev + 1)
+  }
+
+  function handleViewToggle() {
+    const nextShowOriginal = !showOriginal
+    setShowOriginal(nextShowOriginal)
+    const targetChunks = nextShowOriginal ? contentChunks : translatedChunks
+    setVisibleChunkCount(prev => Math.min(prev, targetChunks.length))
   }
 
   if (loading) {
@@ -266,7 +293,7 @@ export default function ReadPage() {
               <Button
                 variant="link"
                 size="sm"
-                onClick={() => setShowOriginal(!showOriginal)}
+                onClick={handleViewToggle}
               >
                 {showOriginal ? 'recent translation' : 'show original'}
               </Button>
@@ -321,10 +348,16 @@ export default function ReadPage() {
         />
 
         <div className="prose prose-sm dark:prose-invert max-w-none cursor-text transition-all">
-          <MDXRender content={
-            showOriginal ? article.markdown : translatedContent || ''
-          } />
+          <MDXRender content={displayContent} />
         </div>
+
+        {hasMore && (
+          <div className="flex justify-center mt-8">
+            <Button variant="outline" onClick={handleReadMore} size="sm">
+              read more ({remainingChars.toLocaleString()} characters remaining)
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   )

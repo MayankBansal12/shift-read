@@ -4,6 +4,7 @@ import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 import { CLEANUP_SYSTEM_PROMPT } from '@/lib/system-prompt'
+import { logJsonParseError } from '@/lib/json-error-logger'
 
 const opencode = createAnthropic({
   baseURL: process.env.OPENCODE_BASE_URL!,
@@ -58,6 +59,7 @@ export async function cleanMarkdown(
     const jsonMatch = jsonString.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       console.error('No JSON found in response:', text.substring(0, 500))
+      logJsonParseError('cleanMarkdown: no JSON found in AI response', text, new Error('No JSON block found'))
       return {
         success: false,
         error: 'Failed to parse cleanup response'
@@ -69,6 +71,7 @@ export async function cleanMarkdown(
       parsedJson = JSON.parse(jsonMatch[0])
     }catch (parseError) {
       console.error('JSON parse error:', parseError)
+      logJsonParseError('cleanMarkdown: JSON parse failed', jsonMatch[0], parseError)
       return {
         success: false,
         error: 'Failed to parse cleanup response: invalid JSON format'
