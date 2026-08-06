@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Sun01Icon, Moon01Icon } from '@hugeicons/core-free-icons'
 
@@ -50,16 +51,25 @@ export default function ThemeToggle() {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={toggleTheme}
-      aria-label="Toggle theme"
-    >
-      <HugeiconsIcon
-        icon={isDark ? Sun01Icon : Moon01Icon}
-        className="size-5"
-      />
-    </Button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+          />
+        }
+      >
+        <HugeiconsIcon
+          icon={isDark ? Sun01Icon : Moon01Icon}
+          className="size-5"
+        />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        switch to {isDark ? 'light' : 'dark'} theme
+      </TooltipContent>
+    </Tooltip>
   )
 }
