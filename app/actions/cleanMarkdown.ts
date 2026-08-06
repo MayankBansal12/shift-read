@@ -11,6 +11,8 @@ const opencode = createAnthropic({
   apiKey: process.env.OPENCODE_API_KEY
 })
 
+const CLEANUP_MAX_OUTPUT_TOKENS = 128_000
+
 const CleanupResponseSchema = z.object({
   content: z.string().describe('Cleaned and formatted markdown content'),
   warnings: z.array(z.string()).optional().describe('Any warnings or notes about the cleanup'),
@@ -42,7 +44,7 @@ export async function cleanMarkdown(
 ): Promise<{ success: boolean; data?: CleanedArticle; error?: string }> {
   try {
     console.log('[cleanMarkdown] Starting cleanup, raw markdown length:', rawMarkdown.length, 'chars')
-    const { text } = await generateText({
+    const { text, finishReason, usage } = await generateText({
       model: opencode(`${process.env.OPENCODE_MODEL!}`),
       instructions: CLEANUP_SYSTEM_PROMPT,
       messages: [
@@ -52,7 +54,23 @@ export async function cleanMarkdown(
         }
       ],
       temperature: 0.2,
+      maxOutputTokens: CLEANUP_MAX_OUTPUT_TOKENS,
     })
+
+    console.log('[cleanMarkdown] Generation finished:', finishReason, '| output tokens:', usage.outputTokens)
+
+    if (finishReason === 'length') {
+      console.error('[cleanMarkdown] Cleanup response exceeded the output token limit')
+      logJsonParseError(
+        'cleanMarkdown: AI response exceeded output token limit',
+        text,
+        new Error(`Output exceeded ${CLEANUP_MAX_OUTPUT_TOKENS} tokens`)
+      )
+      return {
+        success: false,
+        error: 'Article is too large to format in a single request'
+      }
+    }
 
     let jsonString = text.trim()
     jsonString = jsonString.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/i, '').trim()
