@@ -10,6 +10,18 @@ Read any article on the internet in your preferred language. Shift extracts arti
 - Dark mode and light mode support
 - Responsive design for mobile, tablet, and desktop
 
+<video src="https://5kas5z928t.ufs.sh/f/wBHVA4PQTleAXar1Vcwqs8NZT3UMHvygFezBaGYxK2w6S1In" controls muted playsinline width="100%"></video>
+
+## Usage
+
+Visit [shft.page](https://shft.page) and paste an article URL, or use the shortcut directly:
+
+```text
+https://shft.page/https://example.com/article
+```
+
+Simply place `shft.page/` before any article URL to open it in Shift's reader mode.
+
 ## Tech Stack
 
 - Next.js 16 (App Router), TypeScript, Tailwind CSS 4
