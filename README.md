@@ -2,6 +2,8 @@
 
 Read any article on the internet in your preferred language. Shift extracts article content from web pages and translates it while preserving formatting, images, and typography.
 
+<video src="https://5kas5z928t.ufs.sh/f/wBHVA4PQTleAXar1Vcwqs8NZT3UMHvygFezBaGYxK2w6S1In" controls muted playsinline width="100%"></video>
+
 ## Features
 
 - Extracts clean article content from any URL using Firecrawl
@@ -9,8 +11,6 @@ Read any article on the internet in your preferred language. Shift extracts arti
 - Caches articles and translations locally for instant re-access
 - Dark mode and light mode support
 - Responsive design for mobile, tablet, and desktop
-
-<video src="https://5kas5z928t.ufs.sh/f/wBHVA4PQTleAXar1Vcwqs8NZT3UMHvygFezBaGYxK2w6S1In" controls muted playsinline width="100%"></video>
 
 ## Usage
 
