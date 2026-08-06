@@ -86,7 +86,6 @@ describe('chunkContent', () => {
   })
 
   it('hard-splits an extremely long sentence at word boundaries', () => {
-    const longSentence = 'word'.repeat(2000).split('').join('')
     const longSentenceWithSpaces = Array.from({ length: 2000 }, () => 'word').join(' ')
 
     const result = chunkContent(longSentenceWithSpaces, 500)
@@ -119,6 +118,27 @@ describe('chunkContent', () => {
     expect(result.length).toBeGreaterThanOrEqual(2)
     const fullContent = result.map(c => c.text).join('\n\n')
     expect(fullContent).toContain('```\nconst x = 1;')
+  })
+
+  it('keeps fenced code containing blank lines in one chunk', () => {
+    const codeBlock = `\`\`\`typescript
+function first() {
+  return 1
+}
+
+function second() {
+  return 2
+}
+\`\`\``
+    const text = `${'Before. '.repeat(30)}\n\n${codeBlock}\n\n${'After. '.repeat(30)}`
+
+    const result = chunkContent(text, 200)
+    const codeChunks = result.filter(chunk => chunk.text.includes('```typescript'))
+
+    expect(codeChunks).toHaveLength(1)
+    expect(codeChunks[0].text).toContain('function first()')
+    expect(codeChunks[0].text).toContain('function second()')
+    expect(codeChunks[0].text.endsWith('```')).toBe(true)
   })
 
   it('assigns correct sequential indices to chunks', () => {

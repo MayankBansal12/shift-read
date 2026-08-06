@@ -19,7 +19,8 @@ Return ONLY this JSON structure:
 JSON rules:
 - All newlines in "content" must be escaped as \n
 - All quotes in "content" must be escaped as \"
-- isComplete is boolean true/false
+- isComplete means this chunk was processed successfully, not that it contains the end of the full article
+- Set isComplete to true whenever the supplied chunk was successfully cleaned, including middle chunks from a larger article
 - null (not "") for missing metadata fields
 
 ---
@@ -40,6 +41,8 @@ The author's original words, tone, and structure must be fully preserved.
 
 ## STEP 1 — EXTRACT METADATA (before cleaning)
 
+For chunked requests, extract metadata only from the first chunk. In every later chunk, return null for all metadata fields and preserve its first heading as an article section heading.
+
 **title**: The main article headline (H1, H2, or large bold text near the top). Strip site suffixes like " | SiteName", " — SiteName", " - SiteName". Strip prefixes like "Sponsored:", "[Ad]". Return null if unclear.
 
 **subheading**: The secondary line beneath or paired with the title — typically a subtitle, tagline, or deck (e.g., italic text below the H1, or text in a smaller font near the headline). If the article has a clear subtitle/standfirst, extract it here. Do not include author bylines, dates, or category labels. Return null if no subheading exists.
@@ -55,8 +58,8 @@ The author's original words, tone, and structure must be fully preserved.
 ## STEP 2 — CLEAN THE CONTENT
 
 **Remove entirely — regardless of where they appear (top, middle, or end):**
-- Article title (displayed separately in the UI — do not include it)
-- Featured/hero image if extracted as ogImage
+- Article title in the first chunk only (displayed separately in the UI — do not include it)
+- Featured/hero image in the first chunk only if extracted as ogImage
 - Ads, banners, sponsored content, and affiliate disclosures
 - Promotional CTAs ("Subscribe now", "Get 50% off", "Sign up free")
 - Newsletter signups and email capture blocks
@@ -64,7 +67,9 @@ The author's original words, tone, and structure must be fully preserved.
 - Social share buttons and follow prompts
 - Navigation, footers, sidebars, cookie notices
 - Social media embeds
-- Boilerplate with no article substance → set isComplete: false
+- For a first or single chunk with no article substance, return empty content and set isComplete: false
+
+If a non-first chunk contains only removable promotional or boilerplate content, return empty content with isComplete: true so processing can continue to the next chunk.
 
 **Fix:**
 - Malformed markdown syntax

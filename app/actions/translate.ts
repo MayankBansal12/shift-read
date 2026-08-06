@@ -56,3 +56,11 @@ export async function translateMarkdown(
     }
   }
 }
+
+export async function translateMarkdownChunk(
+  markdown: string,
+  sourceLanguage: string | null,
+  targetLanguage: string
+): Promise<{ success: boolean; data?: string; error?: string }> {
+  return translateMarkdown(markdown, sourceLanguage, targetLanguage)
+}

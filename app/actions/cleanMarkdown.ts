@@ -38,11 +38,31 @@ export interface CleanedArticle {
   }
 }
 
+export interface CleanupChunkContext {
+  index: number
+  total: number
+}
+
 export async function cleanMarkdown(
   rawMarkdown: string,
-  metadata?: Record<string, string | undefined>
+  metadata?: Record<string, string | undefined>,
+  chunk?: CleanupChunkContext
 ): Promise<{ success: boolean; data?: CleanedArticle; error?: string }> {
   try {
+    const chunkIndex = chunk?.index ?? 0
+    const chunkTotal = chunk?.total ?? 1
+    const isFirstChunk = chunkIndex === 0
+    const isLastChunk = chunkIndex === chunkTotal - 1
+    const chunkInstructions = [
+      `This is chunk ${chunkIndex + 1} of ${chunkTotal}.`,
+      isFirstChunk
+        ? 'Extract article metadata and remove the article title, subheading, byline, date, and featured image from the body.'
+        : 'Return metadata fields as null. Preserve headings in this chunk because they are article section headings, not the article title.',
+      isLastChunk
+        ? 'Remove footer, related-content, subscription, and end-of-article promotional blocks.'
+        : 'This chunk is intentionally partial. Set isComplete to true after successfully cleaning this chunk; isComplete does not mean the full article has ended.'
+    ].join(' ')
+
     console.log('[cleanMarkdown] Starting cleanup, raw markdown length:', rawMarkdown.length, 'chars')
     const { text, finishReason, usage } = await generateText({
       model: opencode(`${process.env.OPENCODE_MODEL!}`),
@@ -50,7 +70,7 @@ export async function cleanMarkdown(
       messages: [
         {
           role: 'user',
-          content: `Clean the following scraped content. Extract metadata (title, author, date, image) and return only the main article body, excluding any title, featured image, ads, navigation, or related content.\n\n=== FIRECRAWL METADATA (FOR CONTEXT) ===\n${JSON.stringify(metadata || {}, null, 2)}\n\n=== CONTENT START ===\n${rawMarkdown}\n=== CONTENT END ===`
+          content: `Clean the following scraped article chunk and return only its main article Markdown. ${chunkInstructions}\n\n=== FIRECRAWL METADATA (FOR CONTEXT) ===\n${JSON.stringify(metadata || {}, null, 2)}\n\n=== CONTENT START ===\n${rawMarkdown}\n=== CONTENT END ===`
         }
       ],
       temperature: 0.2,
@@ -98,12 +118,16 @@ export async function cleanMarkdown(
 
     const cleaned = CleanupResponseSchema.parse(parsedJson)
 
-    if (!cleaned.isComplete || !cleaned.content.trim()) {
-      console.warn('[cleanMarkdown] Cleanup incomplete or empty content')
+    if (!cleaned.content.trim() && isFirstChunk) {
+      console.warn('[cleanMarkdown] First chunk contains no readable content', cleaned.warnings)
       return {
         success: false,
         error: 'Could not extract meaningful content from the article'
       }
+    }
+
+    if (!cleaned.isComplete && cleaned.content.trim()) {
+      console.warn('[cleanMarkdown] Model marked a non-empty chunk incomplete; accepting cleaned content', cleaned.warnings)
     }
 
     console.log('[cleanMarkdown] Cleanup succeeded, cleaned markdown length:', cleaned.content.length, 'chars')
@@ -112,11 +136,11 @@ export async function cleanMarkdown(
       data: {
         markdown: cleaned.content,
         metadata: {
-          title: cleaned.metadata?.title || metadata?.title,
-          subheading: cleaned.metadata?.subheading || metadata?.subheading,
-          author: cleaned.metadata?.author || metadata?.author,
-          publishedTime: cleaned.metadata?.publishedTime || metadata?.publishedTime,
-          ogImage: cleaned.metadata?.ogImage || metadata?.ogImage,
+          title: isFirstChunk ? cleaned.metadata?.title || metadata?.title : undefined,
+          subheading: isFirstChunk ? cleaned.metadata?.subheading || metadata?.subheading : undefined,
+          author: isFirstChunk ? cleaned.metadata?.author || metadata?.author : undefined,
+          publishedTime: isFirstChunk ? cleaned.metadata?.publishedTime || metadata?.publishedTime : undefined,
+          ogImage: isFirstChunk ? cleaned.metadata?.ogImage || metadata?.ogImage : undefined,
           language: metadata?.language
         }
       }

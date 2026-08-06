@@ -5,7 +5,40 @@ export interface ContentChunk {
   index: number
 }
 
-const PARAGRAPH_SPLIT = /\n{2,}/
+function splitMarkdownBlocks(text: string): string[] {
+  const lines = text.split('\n')
+  const blocks: string[] = []
+  let current: string[] = []
+  let fence: string | null = null
+
+  const flush = () => {
+    const block = current.join('\n').trim()
+    if (block) blocks.push(block)
+    current = []
+  }
+
+  for (const line of lines) {
+    const fenceMatch = line.match(/^\s*(`{3,}|~{3,})/)
+
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0]
+      if (fence === marker) fence = null
+      else if (!fence) fence = marker
+      current.push(line)
+      continue
+    }
+
+    if (!fence && line.trim() === '') {
+      flush()
+      continue
+    }
+
+    current.push(line)
+  }
+
+  flush()
+  return blocks
+}
 
 function extractSentences(text: string): string[] {
   const SENT_END = /(?<=[.!?])(?=\s+[A-Z\p{Lu}"'(\[#*_`~>|]|$)/u
@@ -52,6 +85,7 @@ function hardSplit(s: string, limit: number): string[] {
 
 function splitLongBlock(block: string, maxSize: number): string[] {
   if (block.length <= maxSize) return [block]
+  if (/^\s*(`{3,}|~{3,})/.test(block)) return [block]
 
   const sents = extractSentences(block)
   const chunks: string[] = []
@@ -87,7 +121,7 @@ export function chunkContent(text: string, maxSize: number = CONTENT_CHUNK_SIZE)
 
   if (text.length <= maxSize) return [{ text, index: 0 }]
 
-  const paragraphs = text.split(PARAGRAPH_SPLIT)
+  const paragraphs = splitMarkdownBlocks(text)
   const chunks: ContentChunk[] = []
   let currentChunk = ''
   let chunkIndex = 0
