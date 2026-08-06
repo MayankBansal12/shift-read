@@ -84,8 +84,10 @@ export default function Home() {
 
     return (
         <div className="relative min-h-screen flex flex-col justify-center items-center">
-            <header className="max-w-lg absolute top-0 right-0 p-4 z-10">
-                <ThemeToggle />
+            <header className="absolute inset-x-0 top-0 z-10 px-4 py-3">
+                <div className="max-w-3xl mx-auto flex items-center justify-end">
+                    <ThemeToggle />
+                </div>
             </header>
 
             <main className="max-w-lg flex flex-col gap-6 items-center justify-center p-4">
