@@ -37,7 +37,13 @@ export function getFromStorage(url: string): StoredArticle | null {
     }
     
     return data
-  } catch {
+  } catch (error) {
+    console.error('[storage] JSON parse error on getFromStorage:', {
+      url,
+      storageKey: getStorageKey(url),
+      error: error instanceof Error ? error.message : String(error),
+      rawValue: typeof window !== 'undefined' ? localStorage.getItem(getStorageKey(url))?.substring(0, 500) : 'N/A'
+    })
     return null
   }
 }
@@ -48,7 +54,13 @@ export function saveToStorage(url: string, data: StoredArticle): void {
   try {
     const key = getStorageKey(url)
     localStorage.setItem(key, JSON.stringify(data))
-  } catch {
+  } catch (error) {
+    console.error('[storage] JSON stringify/save error on saveToStorage:', {
+      url,
+      storageKey: getStorageKey(url),
+      error: error instanceof Error ? error.message : String(error),
+      dataKeys: Object.keys(data)
+    })
   }
 }
 
