@@ -232,7 +232,7 @@ export default function ReadPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
             <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">
               shift.
             </Link>
@@ -254,7 +254,7 @@ export default function ReadPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
             <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">
               shift.
             </Link>
@@ -284,7 +284,7 @@ export default function ReadPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">
             shift.
           </Link>
