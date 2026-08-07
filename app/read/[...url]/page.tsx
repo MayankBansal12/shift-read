@@ -162,7 +162,7 @@ export default function ReadPage() {
         }
 
         const nextRawChunks = chunkContent(scrapeResult.data.markdown)
-        setCleanupStatus('formatting the first section...')
+        setCleanupStatus('formatting it nicely...')
         const cleanResult = await cleanMarkdown(
           nextRawChunks[0].text,
           scrapeResult.data.metadata,
