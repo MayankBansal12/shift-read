@@ -7,6 +7,7 @@ import { SUPPORTED_LANGUAGES, REGIONS, getLanguageByCode, type Language } from '
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Combobox,
   ComboboxContent,
@@ -82,13 +83,20 @@ export default function LanguageSelector({
 
   return (
     <Combobox value={value} onValueChange={handleValueChange}>
-      <ComboboxTrigger
-        className={cn(buttonVariants({ variant: 'outline', size: 'default' }))}
-        disabled={disabled}
-      >
-        <HugeiconsIcon icon={TranslateIcon} className="size-4" />
-        <span className="text-lowercase">{displayText?.toLowerCase()}</span>
-      </ComboboxTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <ComboboxTrigger
+              className={cn(buttonVariants({ variant: 'outline', size: 'default' }))}
+              disabled={disabled}
+            />
+          }
+        >
+          <HugeiconsIcon icon={TranslateIcon} className="size-4" />
+          <span className="text-lowercase">{displayText?.toLowerCase()}</span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">translate to any language</TooltipContent>
+      </Tooltip>
 
       <ComboboxContent className="min-w-72 py-2 px-1">
         <div className="p-1">

@@ -1,6 +1,8 @@
 export interface StoredArticle {
+  version: 2
   article: {
-    content: string
+    rawChunks: string[]
+    formattedChunks: string[]
     title?: string
     subheading?: string
     author?: string
@@ -9,7 +11,7 @@ export interface StoredArticle {
     sourceLanguage?: string
   }
   translation?: {
-    content: string
+    chunks: string[]
     language: string
   }
   timestamp: number
@@ -29,14 +31,25 @@ export function getFromStorage(url: string): StoredArticle | null {
     const item = localStorage.getItem(key)
     if (!item) return null
     
-    const data: StoredArticle = JSON.parse(item)
+    const data = JSON.parse(item) as Partial<StoredArticle>
+
+    if (
+      data.version !== 2 ||
+      !data.article ||
+      !Array.isArray(data.article.rawChunks) ||
+      !Array.isArray(data.article.formattedChunks) ||
+      typeof data.timestamp !== 'number'
+    ) {
+      localStorage.removeItem(key)
+      return null
+    }
     
     if (Date.now() - data.timestamp > CACHE_EXPIRATION) {
       localStorage.removeItem(key)
       return null
     }
     
-    return data
+    return data as StoredArticle
   } catch (error) {
     console.error('[storage] JSON parse error on getFromStorage:', {
       url,
