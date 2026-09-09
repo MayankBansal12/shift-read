@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanMarkdown, normalizeSessionId } from '../app/actions/cleanMarkdown'
+import { cleanMarkdown } from '../app/actions/cleanMarkdown'
+import { normalizeSessionId } from '../lib/session'
 
 const mocks = vi.hoisted(() => {
   const provider = vi.fn(() => ({}))

@@ -1,17 +1,11 @@
 'use server'
 
-import { randomUUID } from 'crypto'
 import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 import { CLEANUP_SYSTEM_PROMPT } from '@/lib/system-prompt'
 import { logJsonParseError } from '@/lib/json-error-logger'
-
-const SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-export function normalizeSessionId(sessionId?: string): string {
-  return sessionId && SESSION_ID_PATTERN.test(sessionId) ? sessionId : randomUUID()
-}
+import { normalizeSessionId } from '@/lib/session'
 
 function createOpenCodeProvider(sessionId: string) {
   return createAnthropic({
