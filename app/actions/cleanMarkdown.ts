@@ -5,11 +5,18 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 import { CLEANUP_SYSTEM_PROMPT } from '@/lib/system-prompt'
 import { logJsonParseError } from '@/lib/json-error-logger'
+import { normalizeSessionId } from '@/lib/session'
 
-const opencode = createAnthropic({
-  baseURL: process.env.OPENCODE_BASE_URL!,
-  apiKey: process.env.OPENCODE_API_KEY
-})
+function createOpenCodeProvider(sessionId: string) {
+  return createAnthropic({
+    baseURL: process.env.OPENCODE_BASE_URL!,
+    apiKey: process.env.OPENCODE_API_KEY,
+    headers: {
+      'User-Agent': 'shift/1.0',
+      'x-opencode-session': sessionId
+    }
+  })
+}
 
 const CLEANUP_MAX_OUTPUT_TOKENS = 128_000
 
@@ -46,7 +53,8 @@ export interface CleanupChunkContext {
 export async function cleanMarkdown(
   rawMarkdown: string,
   metadata?: Record<string, string | undefined>,
-  chunk?: CleanupChunkContext
+  chunk?: CleanupChunkContext,
+  sessionId?: string
 ): Promise<{ success: boolean; data?: CleanedArticle; error?: string }> {
   try {
     const chunkIndex = chunk?.index ?? 0
@@ -64,6 +72,7 @@ export async function cleanMarkdown(
     ].join(' ')
 
     console.log('[cleanMarkdown] Starting cleanup, raw markdown length:', rawMarkdown.length, 'chars')
+    const opencode = createOpenCodeProvider(normalizeSessionId(sessionId))
     const { text, finishReason, usage } = await generateText({
       model: opencode(`${process.env.OPENCODE_MODEL!}`),
       instructions: CLEANUP_SYSTEM_PROMPT,

@@ -7,11 +7,11 @@ import { translateMarkdownChunk } from '../app/actions/translate'
 import { getFromStorage, saveToStorage } from '../lib/storage'
 
 const { paramsMock } = vi.hoisted(() => ({
-  paramsMock: { url: ['https%3A%2F%2Fexample.com%2Farticle'] }
+  paramsMock: { current: { url: ['https%3A%2F%2Fexample.com%2Farticle'] } }
 }))
 
 vi.mock('next/navigation', () => ({
-  useParams: () => paramsMock,
+  useParams: () => paramsMock.current,
   useRouter: () => ({ push: vi.fn() })
 }))
 
@@ -125,7 +125,8 @@ describe('progressive reading page', () => {
       1,
       expect.any(String),
       expect.objectContaining({ title: 'Firecrawl title' }),
-      { index: 0, total: 2 }
+      { index: 0, total: 2 },
+      expect.any(String)
     )
     expect(screen.queryByRole('button', { name: /read more/i })).toBeNull()
 
@@ -137,8 +138,11 @@ describe('progressive reading page', () => {
       2,
       expect.any(String),
       expect.objectContaining({ title: 'Formatted title' }),
-      { index: 1, total: 2 }
+      { index: 1, total: 2 },
+      expect.any(String)
     )
+    const sessionIds = vi.mocked(cleanMarkdown).mock.calls.map(call => call[3])
+    expect(sessionIds[1]).toBe(sessionIds[0])
     expect(saveToStorage).toHaveBeenLastCalledWith(
       'https://example.com/article',
       expect.objectContaining({
@@ -148,6 +152,27 @@ describe('progressive reading page', () => {
         })
       })
     )
+  })
+
+  it('generates a fresh opencode session id for each article', async () => {
+    const { rerender } = render(<ReadPage />)
+    expect(await screen.findByText('formatted first chunk')).toBeTruthy()
+    const firstSessionId = vi.mocked(cleanMarkdown).mock.calls[0][3]
+
+    paramsMock.current = { url: ['https%3A%2F%2Fother.com%2Farticle'] }
+    vi.mocked(fetchContent).mockReset().mockResolvedValue({
+      success: true,
+      data: { markdown: 'second article', metadata: { title: 'Second title', language: 'en' } }
+    })
+    vi.mocked(cleanMarkdown).mockReset().mockResolvedValue({
+      success: true,
+      data: { markdown: 'formatted second article', metadata: { language: 'en' } }
+    })
+    rerender(<ReadPage />)
+
+    expect(await screen.findByText('formatted second article')).toBeTruthy()
+    const secondSessionId = vi.mocked(cleanMarkdown).mock.calls.at(-1)![3]
+    expect(secondSessionId).not.toBe(firstSessionId)
   })
 
   it('resumes a partially formatted article from cache without scraping again', async () => {
@@ -178,7 +203,8 @@ describe('progressive reading page', () => {
     expect(cleanMarkdown).toHaveBeenCalledWith(
       'raw second',
       expect.objectContaining({ title: 'Cached title' }),
-      { index: 1, total: 2 }
+      { index: 1, total: 2 },
+      expect.any(String)
     )
   })
 
