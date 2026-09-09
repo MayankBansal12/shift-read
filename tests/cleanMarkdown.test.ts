@@ -13,9 +13,6 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('ai', () => ({ generateText: mocks.generateText }))
 vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mocks.createAnthropic }))
-
-vi.mock('ai', () => ({ generateText: mocks.generateText }))
-vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mocks.createAnthropic }))
 vi.mock('../lib/json-error-logger', () => ({ logJsonParseError: vi.fn() }))
 
 const generateTextMock = mocks.generateText as ReturnType<typeof vi.fn>
