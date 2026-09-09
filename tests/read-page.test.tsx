@@ -125,7 +125,8 @@ describe('progressive reading page', () => {
       1,
       expect.any(String),
       expect.objectContaining({ title: 'Firecrawl title' }),
-      { index: 0, total: 2 }
+      { index: 0, total: 2 },
+      expect.any(String)
     )
     expect(screen.queryByRole('button', { name: /read more/i })).toBeNull()
 
@@ -137,7 +138,8 @@ describe('progressive reading page', () => {
       2,
       expect.any(String),
       expect.objectContaining({ title: 'Formatted title' }),
-      { index: 1, total: 2 }
+      { index: 1, total: 2 },
+      expect.any(String)
     )
     expect(saveToStorage).toHaveBeenLastCalledWith(
       'https://example.com/article',
@@ -178,7 +180,8 @@ describe('progressive reading page', () => {
     expect(cleanMarkdown).toHaveBeenCalledWith(
       'raw second',
       expect.objectContaining({ title: 'Cached title' }),
-      { index: 1, total: 2 }
+      { index: 1, total: 2 },
+      expect.any(String)
     )
   })
 

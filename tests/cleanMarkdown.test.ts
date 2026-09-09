@@ -1,15 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { generateText } from 'ai'
-import { cleanMarkdown } from '../app/actions/cleanMarkdown'
+import { cleanMarkdown, normalizeSessionId } from '../app/actions/cleanMarkdown'
 
-vi.mock('ai', () => ({ generateText: vi.fn() }))
-vi.mock('@ai-sdk/anthropic', () => ({
-  createAnthropic: () => () => ({})
-}))
+const mocks = vi.hoisted(() => {
+  const provider = vi.fn(() => ({}))
+  return {
+    provider,
+    createAnthropic: vi.fn(() => provider),
+    generateText: vi.fn()
+  }
+})
+
+vi.mock('ai', () => ({ generateText: mocks.generateText }))
+vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mocks.createAnthropic }))
+
+vi.mock('ai', () => ({ generateText: mocks.generateText }))
+vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mocks.createAnthropic }))
 vi.mock('../lib/json-error-logger', () => ({ logJsonParseError: vi.fn() }))
 
+const generateTextMock = mocks.generateText as ReturnType<typeof vi.fn>
+
 function mockCleanupResponse(content: string, isComplete: boolean) {
-  vi.mocked(generateText).mockResolvedValue({
+  generateTextMock.mockResolvedValue({
     text: JSON.stringify({
       content,
       warnings: [],
@@ -24,7 +35,7 @@ function mockCleanupResponse(content: string, isComplete: boolean) {
     }),
     finishReason: 'stop',
     usage: { outputTokens: 100 }
-  } as Awaited<ReturnType<typeof generateText>>)
+  })
 }
 
 describe('chunk cleanup acceptance', () => {
@@ -59,5 +70,46 @@ describe('chunk cleanup acceptance', () => {
 
     expect(result.success).toBe(true)
     expect(result.data?.markdown).toBe('')
+  })
+})
+
+describe('opencode go session headers', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('identifies as shift and forwards a valid session id', async () => {
+    mockCleanupResponse('clean', true)
+    const sessionId = 'c0a80101-0000-4000-8000-000000000000'
+
+    await cleanMarkdown('raw content', {}, { index: 0, total: 1 }, sessionId)
+
+    expect(mocks.createAnthropic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          'User-Agent': 'shift/1.0',
+          'x-opencode-session': sessionId
+        }
+      })
+    )
+  })
+
+  it('falls back to a generated uuid for invalid session ids', async () => {
+    mockCleanupResponse('clean', true)
+
+    await cleanMarkdown('raw content', {}, { index: 0, total: 1 }, 'not-a-uuid')
+
+    expect(mocks.createAnthropic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          'User-Agent': 'shift/1.0',
+          'x-opencode-session': expect.stringMatching(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+          )
+        }
+      })
+    )
+    expect(normalizeSessionId('not-a-uuid')).not.toBe('not-a-uuid')
+    expect(normalizeSessionId()).toMatch(/^[0-9a-f]{8}-/)
   })
 })

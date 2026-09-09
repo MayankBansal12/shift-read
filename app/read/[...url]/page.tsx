@@ -36,6 +36,7 @@ export default function ReadPage() {
   const params = useParams()
   const router = useRouter()
   const decodedUrlRef = useRef('')
+  const sessionIdRef = useRef(crypto.randomUUID())
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const requestInFlightRef = useRef(false)
   const articleGenerationRef = useRef(0)
@@ -166,7 +167,8 @@ export default function ReadPage() {
         const cleanResult = await cleanMarkdown(
           nextRawChunks[0].text,
           scrapeResult.data.metadata,
-          { index: 0, total: nextRawChunks.length }
+          { index: 0, total: nextRawChunks.length },
+          sessionIdRef.current
         )
         if (cancelled || generation !== articleGenerationRef.current) return
 
@@ -239,7 +241,7 @@ export default function ReadPage() {
       const cleanResult = await cleanMarkdown(rawChunk.text, metadata, {
         index,
         total: rawChunks.length
-      })
+      }, sessionIdRef.current)
       if (generation !== articleGenerationRef.current) return
       if (!cleanResult.success || !cleanResult.data) {
         setLoadMoreError(cleanResult.error || 'Failed to format the next section')
