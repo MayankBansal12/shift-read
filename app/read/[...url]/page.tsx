@@ -6,6 +6,7 @@ import { translateMarkdownChunk } from '@/app/actions/translate'
 import ArticleHeader from '@/components/ArticleHeader'
 import LanguageSelector from '@/components/LanguageSelector'
 import ListenToArticle from '@/components/ListenToArticle'
+import ReadingFocus from '@/components/ReadingFocus'
 import { MDXRender } from '@/components/MDXRender'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
@@ -500,11 +501,14 @@ export default function ReadPage() {
           />
         )}
 
-        <div className="prose prose-sm dark:prose-invert max-w-none cursor-text">
+        <ReadingFocus
+          contentKey={`${JSON.stringify(params.url)}:${showOriginal ? 'original' : selectedLanguage}`}
+          language={displayedLanguage ?? undefined}
+        >
           {activeChunks.map(chunk => (
             <MDXRender key={chunk.index} content={chunk.text} />
           ))}
-        </div>
+        </ReadingFocus>
 
         <div ref={sentinelRef} className="min-h-20 flex items-center justify-center py-6">
           {(loadingMore || translating) && (

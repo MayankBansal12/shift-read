@@ -1,0 +1,168 @@
+.reading-focus {
+  position: relative;
+  isolation: isolate;
+}
+
+.reading-focus,
+.reading-focus-swatch {
+  --focus-hue: 150;
+  --focus-chroma: 0.075;
+  --focus-swatch: oklch(0.86 var(--focus-chroma) var(--focus-hue));
+  --focus-fill: oklch(0.89 var(--focus-chroma) var(--focus-hue) / 0.68);
+}
+
+.reading-focus[data-focus-color="sage"],
+.reading-focus-swatch[data-color="sage"] {
+  --focus-hue: 150;
+  --focus-chroma: 0.075;
+}
+
+.reading-focus[data-focus-color="honey"],
+.reading-focus-swatch[data-color="honey"] {
+  --focus-hue: 88;
+  --focus-chroma: 0.12;
+}
+
+.reading-focus[data-focus-color="sky"],
+.reading-focus-swatch[data-color="sky"] {
+  --focus-hue: 232;
+  --focus-chroma: 0.075;
+}
+
+.reading-focus[data-focus-color="rose"],
+.reading-focus-swatch[data-color="rose"] {
+  --focus-hue: 12;
+  --focus-chroma: 0.075;
+}
+
+.reading-focus[data-focus-color="lavender"],
+.reading-focus-swatch[data-color="lavender"] {
+  --focus-hue: 300;
+  --focus-chroma: 0.07;
+}
+
+.dark .reading-focus,
+.dark .reading-focus-swatch {
+  --focus-swatch: oklch(0.72 var(--focus-chroma) var(--focus-hue));
+  --focus-fill: oklch(0.69 var(--focus-chroma) var(--focus-hue) / 0.36);
+}
+
+.reading-focus-content {
+  position: relative;
+  z-index: 1;
+  cursor: text;
+  touch-action: manipulation;
+  outline: none;
+  border-radius: var(--radius-lg);
+}
+
+.reading-focus-content :where(:not(a, button, img, video, audio, pre, code, input, textarea, select)) {
+  cursor: text;
+}
+
+.reading-focus[data-focus-enabled="false"] .reading-focus-content:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 45%, transparent);
+}
+
+.reading-focus-mark {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 0.3em;
+  background: var(--focus-fill);
+  box-shadow: 0 0 0 0.18em var(--focus-fill);
+}
+
+.reading-focus-popover {
+  position: absolute;
+  z-index: 20;
+  width: max-content;
+  max-width: 100%;
+}
+
+@keyframes reading-focus-palette-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.reading-focus-palette {
+  transform-origin: center;
+  animation: reading-focus-palette-in 140ms ease-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  max-width: 100%;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--popover) 98%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.06),
+    0 8px 24px -8px oklch(0 0 0 / 0.18);
+  color: var(--popover-foreground);
+}
+
+.dark .reading-focus-palette {
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.4),
+    0 8px 24px -8px oklch(0 0 0 / 0.6);
+}
+
+.reading-focus-swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 9999px;
+  background: transparent;
+  outline: none;
+}
+
+.reading-focus-swatch::before {
+  content: "";
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 9999px;
+  background: var(--focus-swatch);
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.08);
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.dark .reading-focus-swatch::before {
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.12);
+}
+
+.reading-focus-swatch:hover::before {
+  transform: scale(1.12);
+}
+
+.reading-focus-swatch[aria-pressed="true"]::before {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 2px var(--popover),
+    0 0 0 3.5px var(--focus-swatch);
+}
+
+.reading-focus-swatch:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-focus-palette {
+    animation: none;
+  }
+  .reading-focus-swatch::before {
+    transition: none;
+  }
+}
