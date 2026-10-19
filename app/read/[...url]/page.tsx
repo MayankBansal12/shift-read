@@ -18,7 +18,8 @@ import { ViewIcon } from '@hugeicons/core-free-icons'
 import { useArticleTTS } from '@/hooks/useArticleTTS'
 import { chunkContent, type ContentChunk } from '@/lib/content-chunker'
 import { getFromStorage, saveToStorage } from '@/lib/storage'
-import { reconstructUrl } from '@/lib/utils'
+import { cn, reconstructUrl } from '@/lib/utils'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -49,6 +50,14 @@ function createSessionId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
+function HomeLink() {
+  return (
+    <Link href="/" aria-label="shift home" className="inline-flex hover:opacity-80 transition-opacity">
+      <Image src="/shift-logo.png" alt="shift." width={66} height={44} priority className="h-11 w-auto" />
+    </Link>
+  )
+}
+
 export default function ReadPage() {
   const params = useParams()
   const router = useRouter()
@@ -73,6 +82,7 @@ export default function ReadPage() {
   const [translateError, setTranslateError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isZenMode, setIsZenMode] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
 
   const originalContent = joinChunks(formattedChunks)
   const translatedContent = joinChunks(translatedChunks)
@@ -327,6 +337,13 @@ export default function ReadPage() {
     return () => observer.disconnect()
   }, [hasMore, loadNextChunk, loadingMore, loadMoreError, translateError, translating])
 
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 8)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   async function handleLanguageChange(language: string | null) {
     const translationGeneration = ++translationGenerationRef.current
     setTranslateError(null)
@@ -378,9 +395,9 @@ export default function ReadPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
+        <header className="sticky top-0 z-10 bg-background px-4 py-2">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">shift.</Link>
+            <HomeLink />
             <ThemeToggle />
           </div>
         </header>
@@ -397,9 +414,9 @@ export default function ReadPage() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3">
+        <header className="sticky top-0 z-10 bg-background px-4 py-2">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity text-primary">shift.</Link>
+            <HomeLink />
             <ThemeToggle />
           </div>
         </header>
@@ -418,35 +435,51 @@ export default function ReadPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className={isZenMode
-        ? 'fixed inset-x-0 top-0 z-10 pointer-events-none px-4 py-3'
-        : 'sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3'
-      }>
-        <div className="max-w-4xl mx-auto flex items-center justify-end gap-4">
-          {!isZenMode && (
-            <>
-              <Link href="/" className="mr-auto font-bold text-xl hover:opacity-80 transition-opacity text-primary">shift.</Link>
-              {translatedChunks.length > 0 && (
-                <Button variant="link" size="sm" onClick={handleViewToggle}>
-                  {showOriginal ? 'recent translation' : 'show original'}
-                </Button>
-              )}
-              {translating ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner />
-                  <span>translating...</span>
-                </div>
-              ) : (
-                <LanguageSelector
-                  sourceLanguage={metadata.language}
-                  selectedLanguage={displayedLanguage}
-                  onLanguageChange={handleLanguageChange}
-                  disabled={loading}
-                />
-              )}
-              <ThemeToggle />
-            </>
-          )}
+      <header className={cn(
+        'sticky top-0 z-10 px-4 py-2 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ease-out motion-reduce:transition-none',
+        isZenMode
+          ? 'pointer-events-none border-transparent bg-transparent'
+          : isScrolled
+            ? 'border-border/60 bg-background/85 backdrop-blur-lg backdrop-saturate-150'
+            : 'border-transparent bg-background'
+      )}>
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          <div
+            inert={isZenMode}
+            className={cn(
+              'mr-auto transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none',
+              isZenMode && '-translate-y-1 opacity-0'
+            )}
+          >
+            <HomeLink />
+          </div>
+          <div
+            inert={isZenMode}
+            className={cn(
+              'flex items-center gap-4 transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none',
+              isZenMode && '-translate-y-1 opacity-0'
+            )}
+          >
+            {translatedChunks.length > 0 && (
+              <Button variant="link" size="sm" onClick={handleViewToggle}>
+                {showOriginal ? 'recent translation' : 'show original'}
+              </Button>
+            )}
+            {translating ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner />
+                <span>translating...</span>
+              </div>
+            ) : (
+              <LanguageSelector
+                sourceLanguage={metadata.language}
+                selectedLanguage={displayedLanguage}
+                onLanguageChange={handleLanguageChange}
+                disabled={loading}
+              />
+            )}
+            <ThemeToggle />
+          </div>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -482,24 +515,32 @@ export default function ReadPage() {
           image={metadata.ogImage}
         />
 
-        {!isZenMode && (
-          <ListenToArticle
-            state={tts.state}
-            audioRef={tts.audioRef}
-            chunks={tts.chunks}
-            tooLong={tts.tooLong}
-            empty={tts.empty}
-            words={tts.words}
-            chars={tts.chars}
-            readingMinutes={tts.readingMinutes}
-            volume={tts.volume}
-            disabled={listenDisabled}
-            disabledMessage={listenDisabled ? 'listen to blog is only available for english' : undefined}
-            onToggle={tts.onToggle}
-            onVolumeChange={tts.onVolumeChange}
-            onMuteToggle={tts.onMuteToggle}
-          />
-        )}
+        <div
+          inert={isZenMode}
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none',
+            isZenMode ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <ListenToArticle
+              state={tts.state}
+              audioRef={tts.audioRef}
+              chunks={tts.chunks}
+              tooLong={tts.tooLong}
+              empty={tts.empty}
+              words={tts.words}
+              chars={tts.chars}
+              readingMinutes={tts.readingMinutes}
+              volume={tts.volume}
+              disabled={listenDisabled}
+              disabledMessage={listenDisabled ? 'listen to blog is only available for english' : undefined}
+              onToggle={tts.onToggle}
+              onVolumeChange={tts.onVolumeChange}
+              onMuteToggle={tts.onMuteToggle}
+            />
+          </div>
+        </div>
 
         <ReadingFocus
           contentKey={`${JSON.stringify(params.url)}:${showOriginal ? 'original' : selectedLanguage}`}
