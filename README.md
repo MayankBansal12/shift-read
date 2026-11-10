@@ -26,10 +26,12 @@ Simply place `shft.page/` before any article URL to open it in Shift's reader mo
 
 - Next.js 16 (App Router), TypeScript, Tailwind CSS 4
 - shadcn/ui (base-nova style)
-- @mendable/firecrawl-js for web scraping
+- @mendable/firecrawl-js for web scraping through the [Firecrawl v2 API](https://docs.firecrawl.dev/migrate-to-v2)
 - lingo.dev SDK for translation
 - react-markdown, remark-gfm, rehype-highlight, react-syntax-highlighter
 - localStorage for caching
+
+Firecrawl is loaded directly on the server via Next.js [`serverExternalPackages`](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages). This avoids Turbopack treating the SDK's optional Zod 4 `toJSONSchema` access as a missing export with this app's Zod 3 dependency.
 
 ## Supported Languages
 

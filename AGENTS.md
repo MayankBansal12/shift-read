@@ -145,12 +145,13 @@ export default function Home() {
 **Requirements:**
 - Server action (use 'use server')
 - Accepts URL parameter
-- Calls Firecrawl API with:
+- Calls Firecrawl v2 API with:
   - formats: ['markdown']
   - onlyMainContent: true
   - waitFor: 1000ms
 - Returns: { markdown, metadata } with metadata containing { title, author, publishedTime, ogImage, language }
 - Handle errors gracefully
+- The v2 SDK returns the document directly and throws on failure; it has no `success` field
 
 **Implementation Pattern:**
 ```typescript
@@ -173,13 +174,13 @@ export async function scrapeArticle(url: string): Promise<{ success: boolean; da
   try {
     const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY })
     
-    const result = await firecrawl.scrapeUrl(url, {
+    const result = await firecrawl.scrape(url, {
       formats: ['markdown'],
       onlyMainContent: true,
       waitFor: 1000
     })
 
-    if (!result.success || !result.markdown) {
+    if (!result.markdown) {
       return { success: false, error: 'Failed to extract article content' }
     }
 
